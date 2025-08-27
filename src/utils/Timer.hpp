@@ -1,0 +1,8 @@
+//
+// Created by PC MASTER on 8/25/2025.
+//
+
+#ifndef MEMORY_PROFILER_TIMER_HPP
+#define MEMORY_PROFILER_TIMER_HPP
+
+#endif //MEMORY_PROFILER_TIMER_HPP
