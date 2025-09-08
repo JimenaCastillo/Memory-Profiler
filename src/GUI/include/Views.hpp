@@ -1,0 +1,8 @@
+//
+// Created by PC MASTER on 8/25/2025.
+//
+
+#ifndef MEMORY_PROFILER_VIEWS_HPP
+#define MEMORY_PROFILER_VIEWS_HPP
+
+#endif //MEMORY_PROFILER_VIEWS_HPP
