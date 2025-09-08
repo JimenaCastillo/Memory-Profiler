@@ -1,0 +1,157 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\CMakeLists.txt||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:CMakeLists.txt||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\core\\Serializer.cpp||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\Library\\core\\Serializer.cpp||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\core\\OperatorOverrides.cpp||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\Library\\core\\OperatorOverrides.cpp||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\core\\MemoryTracker.cpp||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\Library\\core\\MemoryTracker.cpp||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\include\\MemoryTracker.hpp||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\Library\\include\\MemoryTracker.hpp||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\include\\SocketClient.hpp||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\Library\\include\\SocketClient.hpp||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\include\\Serializer.hpp||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\Library\\include\\Serializer.hpp||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\include\\OperatorOverrides.hpp||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\Library\\include\\OperatorOverrides.hpp||{8B382828-6202-11D1-8870-0000F87579D2}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 7,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c64b9c2-e352-428e-a56d-0ace190b99a6}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Serializer.cpp",
+              "DocumentMoniker": "C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\core\\Serializer.cpp",
+              "RelativeDocumentMoniker": "src\\Library\\core\\Serializer.cpp",
+              "ToolTip": "C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\core\\Serializer.cpp",
+              "RelativeToolTip": "src\\Library\\core\\Serializer.cpp",
+              "ViewState": "AgIAAEAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-08-31T05:26:38.51Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "OperatorOverrides.cpp",
+              "DocumentMoniker": "C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\core\\OperatorOverrides.cpp",
+              "RelativeDocumentMoniker": "src\\Library\\core\\OperatorOverrides.cpp",
+              "ToolTip": "C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\core\\OperatorOverrides.cpp",
+              "RelativeToolTip": "src\\Library\\core\\OperatorOverrides.cpp",
+              "ViewState": "AgIAADAAAAAAAAAAAAAkwFoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-08-31T05:26:16.807Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "MemoryTracker.cpp",
+              "DocumentMoniker": "C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\core\\MemoryTracker.cpp",
+              "RelativeDocumentMoniker": "src\\Library\\core\\MemoryTracker.cpp",
+              "ToolTip": "C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\core\\MemoryTracker.cpp",
+              "RelativeToolTip": "src\\Library\\core\\MemoryTracker.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-08-31T05:24:37.287Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "SocketClient.hpp",
+              "DocumentMoniker": "C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\include\\SocketClient.hpp",
+              "RelativeDocumentMoniker": "src\\Library\\include\\SocketClient.hpp",
+              "ToolTip": "C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\include\\SocketClient.hpp",
+              "RelativeToolTip": "src\\Library\\include\\SocketClient.hpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-08-31T05:23:29.459Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Serializer.hpp",
+              "DocumentMoniker": "C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\include\\Serializer.hpp",
+              "RelativeDocumentMoniker": "src\\Library\\include\\Serializer.hpp",
+              "ToolTip": "C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\include\\Serializer.hpp",
+              "RelativeToolTip": "src\\Library\\include\\Serializer.hpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-08-31T05:23:06.226Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "CMakeLists.txt",
+              "DocumentMoniker": "C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\CMakeLists.txt",
+              "RelativeDocumentMoniker": "CMakeLists.txt",
+              "ToolTip": "C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\CMakeLists.txt",
+              "RelativeToolTip": "CMakeLists.txt",
+              "ViewState": "AgIAABYAAAAAAAAAAAAAwBkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2025-08-31T05:09:07.46Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "OperatorOverrides.hpp",
+              "DocumentMoniker": "C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\include\\OperatorOverrides.hpp",
+              "RelativeDocumentMoniker": "src\\Library\\include\\OperatorOverrides.hpp",
+              "ToolTip": "C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\include\\OperatorOverrides.hpp",
+              "RelativeToolTip": "src\\Library\\include\\OperatorOverrides.hpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-08-31T05:21:13.953Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "MemoryTracker.hpp",
+              "DocumentMoniker": "C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\include\\MemoryTracker.hpp",
+              "RelativeDocumentMoniker": "src\\Library\\include\\MemoryTracker.hpp",
+              "ToolTip": "C:\\Users\\garro\\Downloads\\Memory-Profiler-develop\\Memory-Profiler-develop\\src\\Library\\include\\MemoryTracker.hpp",
+              "RelativeToolTip": "src\\Library\\include\\MemoryTracker.hpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-08-31T05:20:28.637Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

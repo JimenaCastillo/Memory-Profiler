@@ -1,8 +1,8 @@
-//
-// Created by PC MASTER on 8/25/2025.
-//
+#pragma once
+#include <cstdint>
 
-#ifndef MEMORY_PROFILER_GUI_HPP
-#define MEMORY_PROFILER_GUI_HPP
-
-#endif //MEMORY_PROFILER_GUI_HPP
+namespace mp::gui {
+bool startGUI(std::uint16_t port = 7777);
+void stopGUI();
+void tickGUI();
+} // namespace mp::gui

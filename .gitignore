@@ -43,3 +43,8 @@
 *.log
 *.idea
 
+build/
+*.o
+*.a
+*.swp
+/tmp/

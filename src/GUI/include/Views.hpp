@@ -1,8 +1,8 @@
-//
-// Created by PC MASTER on 8/25/2025.
-//
+#pragma once
+#include <cstdint>
+#include "SocketServer.hpp"
 
-#ifndef MEMORY_PROFILER_VIEWS_HPP
-#define MEMORY_PROFILER_VIEWS_HPP
-
-#endif //MEMORY_PROFILER_VIEWS_HPP
+namespace mp::gui {
+void renderInitialMetrics(const Metrics& m);
+void renderAllocCounter(std::uint64_t total_allocs);
+} // namespace mp::gui
