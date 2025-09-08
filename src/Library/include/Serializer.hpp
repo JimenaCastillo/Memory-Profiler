@@ -1,8 +1,14 @@
-//
-// Created by PC MASTER on 8/25/2025.
-//
+#pragma once
+#include <string>
+#include <vector>
+#include "MemoryTracker.hpp"
 
-#ifndef MEMORY_PROFILER_SERIALIZER_HPP
-#define MEMORY_PROFILER_SERIALIZER_HPP
+namespace mp::serialize {
 
-#endif //MEMORY_PROFILER_SERIALIZER_HPP
+// Serializa métricas básicas a un JSON sencillo (sin libs externas)
+std::string metricsJson(const MemoryTracker& tracker);
+
+// Serializa un snapshot de bloques vivos a JSON sencillo
+std::string snapshotJson(const std::vector<AllocationRecord>& records);
+
+} // namespace mp::serialize

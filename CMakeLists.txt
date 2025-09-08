@@ -1,62 +1,53 @@
 cmake_minimum_required(VERSION 3.16)
-project(Memory-Profiler)
 
-# Usar C++17
+project(memory_profiler
+  VERSION 0.1.0
+  LANGUAGES CXX)
+
+# Recomendado para diagnósticos de memoria
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)  # -fPIC para librerías
 
-# --- Librería de instrumentación ---
-add_library(memory_profiler
-        src/Library/core/ProfilerAPI.cpp
-        src/Library/core/MemoryTracker.cpp
-        src/Library/core/BlockInfo.cpp
-        src/Library/core/SocketClient.cpp
-        src/Library/core/Serializer.cpp
-        tests/UnitTests/test_Leaks.cpp
-)
+# Opciones de build por defecto si no se especifica
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
+endif()
 
-# Headers públicos para usuarios de la librería
-target_include_directories(memory_profiler PUBLIC
-        src/Library/core
-        src/utils
-)
+# Recoger fuentes de la librería (ajusta la ruta si tus .cpp están en otro lugar)
+file(GLOB_RECURSE MEMORY_PROFILER_SOURCES
+     CONFIGURE_DEPENDS
+     src/Library/*.cpp)
 
-# Dependencias comunes
-target_sources(memory_profiler PRIVATE
-        src/utils/Logger.cpp
-        src/utils/Configuration.cpp
-        src/utils/Timer.cpp
-)
+if(MEMORY_PROFILER_SOURCES STREQUAL "")
+  message(FATAL_ERROR "No se encontraron fuentes en src/Library/*.cpp")
+endif()
 
-# --- Ejecutable GUI ---
-add_executable(memory_profiler_gui
-        src/GUI/core/GUI.cpp
-        src/GUI/core/Charts.cpp
-        src/GUI/core/Views.cpp
-        src/GUI/core/SocketServer.cpp
-)
+add_library(memory_profiler STATIC ${MEMORY_PROFILER_SOURCES})
 
-# Headers del GUI
-target_include_directories(memory_profiler_gui PUBLIC
-        src/GUI/core
-        src/utils
-)
+# Incluye los headers públicos (ajusta si tus headers están en otra carpeta)
+target_include_directories(memory_profiler
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Library/include>
+    $<INSTALL_INTERFACE:include>)
 
-# Enlazar GUI con la librería
-target_link_libraries(memory_profiler_gui PRIVATE memory_profiler)
+target_compile_features(memory_profiler PUBLIC cxx_std_17)
 
-# --- Tests / Ejemplos ---
-add_executable(memory_profiler_tests
-        tests/UnitTests/test_MemoryTracker.cpp
-        tests/UnitTests/test_BlockInfo.cpp
-        tests/UnitTests/test_Leaks.cpp
-        tests/UnitTests/test_Serializer.cpp
-)
+# Warnings útiles y frame pointers para mejores perfiles
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  target_compile_options(memory_profiler PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion
+    -fno-omit-frame-pointer)
+endif()
 
-target_include_directories(memory_profiler_tests PUBLIC
-        src/Library/core
-        src/GUI/core
-        src/utils
-)
+# pthread si lo usas (bloqueos, TLS, etc.)
+find_package(Threads REQUIRED)
+target_link_libraries(memory_profiler PUBLIC Threads::Threads)
 
-target_link_libraries(memory_profiler_tests PRIVATE memory_profiler)
+# (Opcional) defines para evitar recursión en hooks u opciones de la lib
+# target_compile_definitions(memory_profiler PUBLIC MP_ENABLE_DEMANGLE=1)
+
+# (Opcional) Instalar la librería y headers
+# install(TARGETS memory_profiler EXPORT memory_profilerTargets
+#         ARCHIVE DESTINATION lib)
+# install(DIRECTORY src/Library/include/ DESTINATION include)

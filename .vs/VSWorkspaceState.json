@@ -1,0 +1,17 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\build",
+    "\\build\\CMakeFiles",
+    "\\build\\CMakeFiles\\4.1.1",
+    "\\build\\CMakeFiles\\pkgRedirects",
+    "\\src",
+    "\\src\\GUI",
+    "\\src\\GUI\\core",
+    "\\src\\GUI\\include",
+    "\\tests",
+    "\\tests\\UnitTests"
+  ],
+  "SelectedNode": "\\build",
+  "PreviewInSolutionExplorer": false
+}

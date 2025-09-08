@@ -1,8 +1,8 @@
-//
-// Created by PC MASTER on 8/25/2025.
-//
+#pragma once
+#include <vector>
+#include "SocketServer.hpp"
 
-#ifndef MEMORY_PROFILER_CHARTS_HPP
-#define MEMORY_PROFILER_CHARTS_HPP
-
-#endif //MEMORY_PROFILER_CHARTS_HPP
+namespace mp::gui {
+void renderActiveBytesChart(const std::vector<Metrics>& series,
+                            int width = 60, int height = 12);
+} // namespace mp::gui
