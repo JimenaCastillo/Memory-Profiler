@@ -1,9 +1,10 @@
 #include "MemoryTracker.hpp"
 #include <new> // std::nothrow (por si se usa en el futuro)
+#include "ReentryGuard.hpp"  // para ScopedHookGuard
 
 namespace mp {
 
-// === Helpers estáticos ===
+// === Helpers estï¿½ticos ===
 uint64_t MemoryTracker::nowNs() {
     using namespace std::chrono;
     return duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count();
@@ -21,11 +22,11 @@ MemoryTracker& MemoryTracker::instance() {
     return inst;
 }
 
-// === Registro de asignación ===
+// === Registro de asignaciï¿½n ===
 void MemoryTracker::onAlloc(void* p, std::size_t sz, const char* type,
                             const char* file, int line, bool isArray) {
     if (!p || sz == 0) {
-        // Si malloc devolvió nullptr (o size==0), no registramos.
+        // Si malloc devolviï¿½ nullptr (o size==0), no registramos.
         return;
     }
 
@@ -52,7 +53,7 @@ void MemoryTracker::onAlloc(void* p, std::size_t sz, const char* type,
     }
 }
 
-// === Registro de liberación ===
+// === Registro de liberaciï¿½n ===
 void MemoryTracker::onFree(void* p, bool /*isArray*/) noexcept {
     if (!p) return;
 
@@ -65,7 +66,7 @@ void MemoryTracker::onFree(void* p, bool /*isArray*/) noexcept {
         if (active_allocs_ > 0)  --active_allocs_;
         live_.erase(it);
     }
-    // Importante: no lanzar excepciones aquí.
+    // Importante: no lanzar excepciones aquï¿½.
 }
 
 // === Snapshot de bloques vivos ===
@@ -80,7 +81,7 @@ std::vector<AllocationRecord> MemoryTracker::snapshotLive() const {
     return out;
 }
 
-// === Métricas ===
+// === Mï¿½tricas ===
 std::size_t MemoryTracker::activeBytes() const {
     std::lock_guard<std::mutex> lock(mu_);
     return active_bytes_;

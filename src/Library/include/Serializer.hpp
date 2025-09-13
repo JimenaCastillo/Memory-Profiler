@@ -1,14 +1,25 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "MemoryTracker.hpp"
+#include <cstdint>
+#include "BlockInfo.hpp"
+//#include "BlockInfo.cpp"
+namespace mp {
 
-namespace mp::serialize {
+  // JSON plano: {"bytes_in_use":X,"peak":Y,"alloc_count":Z}
+  std::string make_summary_json(std::size_t bytes_in_use,
+                                std::size_t peak,
+                                std::size_t alloc_count);
 
-// Serializa métricas básicas a un JSON sencillo (sin libs externas)
-std::string metricsJson(const MemoryTracker& tracker);
+  // CSV plano (encabezado estable)
+  // ptr,size,alloc_id,thread_id,t_ns,callsite
+  std::string make_live_allocs_csv(const std::vector<BlockInfo>& blocks);
 
-// Serializa un snapshot de bloques vivos a JSON sencillo
-std::string snapshotJson(const std::vector<AllocationRecord>& records);
+  // JSON: {"blocks":[{...}, ...]}
+  std::string make_live_allocs_json(const std::vector<BlockInfo>& blocks);
 
-} // namespace mp::serialize
+  // Envoltura para GUI: {"type":"TYPE","payload":{...}}
+  // payload_object_json DEBE ser un objeto JSON (sin comillas externas)
+  std::string make_message_json(const char* type, const std::string& payload_object_json);
+
+} // namespace mp

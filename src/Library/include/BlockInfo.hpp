@@ -1,8 +1,18 @@
-//
-// Created by PC MASTER on 8/25/2025.
-//
+#pragma once
+#include <cstddef>
+#include <cstdint>
+#include <string>
 
-#ifndef MEMORY_PROFILER_BLOCKINFO_HPP
-#define MEMORY_PROFILER_BLOCKINFO_HPP
+namespace mp {
 
-#endif //MEMORY_PROFILER_BLOCKINFO_HPP
+// DTO público que usa Serializer.{csv,json}
+struct BlockInfo {
+    void*         ptr        = nullptr;
+    std::size_t   size       = 0;
+    std::uint64_t alloc_id   = 0;
+    std::uint32_t thread_id  = 0;
+    std::uint64_t t_ns       = 0;
+    std::string   callsite;            // "file:line[:func]"
+};
+
+} // namespace mp

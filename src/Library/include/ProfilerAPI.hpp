@@ -1,61 +1,34 @@
 #pragma once
 #include <string>
+#include <cstdint>
 
-/**
- * Public API for consumers (apps/GUI) to retrieve memory metrics/snapshots
- * and to control sampling.
- *
- * All functions are noexcept and safe to call from any thread.
- * Internals rely on MemoryTracker's own synchronization.
- */
-namespace mp::api {
+namespace mp {
 
-/**
- * @brief Return current metrics as JSON.
- *
- * Structure (example):
- * {
- *   "active_bytes": <uint64>,
- *   "peak_bytes": <uint64>,
- *   "total_allocs": <uint64>,
- *   "active_allocs": <uint64>
- * }
- *
- * @return std::string JSON payload; returns {"error": "..."} on failure.
- */
-std::string getMetricsJson() noexcept;
+  void start();
+  void stop();
+  bool is_enabled();
 
-/**
- * @brief Return a snapshot of current live allocations as JSON.
- *
- * Each record typically contains:
- *   ptr, size, type_name, timestamp_ns, thread_id, file, line, is_array
- *
- * @return std::string JSON payload; returns {"error": "..."} on failure.
- */
-std::string getSnapshotJson() noexcept;
+  using SnapshotId = std::uint64_t;
+  SnapshotId snapshot();
 
-/**
- * @brief Enable or disable sampling (registration into the tracker).
- *
- * When disabled, hooks may skip registering onAlloc/onFree (requires the
- * small check in OperatorOverrides — see patch below).
- */
-void setSamplingEnabled(bool enabled) noexcept;
+  // Reportes "puros"
+  std::string summary_json();       // JSON: bytes_in_use, peak, alloc_count
+  std::string live_allocs_csv();    // CSV: para tests o exportar
 
-/** @brief Returns current sampling state. */
-bool isSamplingEnabled() noexcept;
+  // Mensajes para GUI (todo JSON)
+  std::string summary_message_json();      // {"type":"SUMMARY","payload":{...}}
+  std::string live_allocs_message_json();  // {"type":"LIVE_ALLOCS","payload":{"blocks":[...]}}
 
-/**
- * @brief RAII helper that pauses sampling for the scope duration.
- *        Restores the previous state on destruction.
- */
-class ScopedSamplingPause {
-public:
-    explicit ScopedSamplingPause(bool pause = true) noexcept;
-    ~ScopedSamplingPause();
-private:
-    bool prev_;
-};
+  struct ScopedSection {
+    explicit ScopedSection(const char* name);
+    ~ScopedSection();
+  };
 
-} // namespace mp::api
+  // ---- Compatibilidad con demo / SocketClient ----
+  namespace api {
+    // Devuelven el "message JSON" listo para enviar por socket
+    std::string getMetricsJson();   // wrapper -> summary_message_json()
+    std::string getSnapshotJson();  // wrapper -> live_allocs_message_json()
+  }
+
+} // namespace mp
