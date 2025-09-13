@@ -23,13 +23,18 @@ static Blob* make_blob(size_t sz) {
     return MP_NEW_FT(Blob, sz);
 }
 
+namespace mp { void install_callbacks_with_memorytracker(); }
+
+
 int main() {
+
+    mp::install_callbacks_with_memorytracker();
     // 1) Arranca el cliente para hablar con la GUI (127.0.0.1:7777 por defecto)
     static mp::SocketClient client;
     client.start("127.0.0.1", 7777);
 
     std::cout << "[demo] starting... metrics(before)="
-              << mp::api::getMetricsJson() << "\n";
+            << mp::api::getMetricsJson() << "\n";
 
     std::mt19937_64 rng{123456789};
     std::uniform_int_distribution<size_t> size_dist(1<<10, 1<<15); // 1 KB .. 32 KB

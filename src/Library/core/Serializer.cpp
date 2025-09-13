@@ -1,64 +1,70 @@
 #include "Serializer.hpp"
 #include <string>
-#include <sstream>
+#include <cstdint>   // uint64_t, uintptr_t
 
-namespace mp::serialize {
+namespace mp {
 
-static void appendEscaped(std::string& s, const char* cstr) {
-    if (!cstr) { s += "null"; return; }
-    s += '"';
-    for (const char* p = cstr; *p; ++p) {
-        char c = *p;
-        switch (c) {
-            case '\\': s += "\\\\"; break;
-            case '\"': s += "\\\""; break;
-            case '\n': s += "\\n";  break;
-            case '\r': s += "\\r";  break;
-            case '\t': s += "\\t";  break;
-            default:   s += c;      break;
-        }
+  static inline std::string u64_to_str(uint64_t v){
+    return std::to_string((unsigned long long)v);
+  }
+  static inline std::string ptr_to_str(const void* p){
+    return std::to_string(reinterpret_cast<std::uintptr_t>(p));
+  }
+  static inline std::string json_escape(const std::string& s){
+    std::string out; out.reserve(s.size()+8);
+    for (char c : s) {
+      if (c=='\\' || c=='\"') { out.push_back('\\'); out.push_back(c); }
+      else if (c=='\n') out += "\\n";
+      else out.push_back(c);
     }
-    s += '"';
-}
-
-std::string metricsJson(const MemoryTracker& tracker) {
-    // Desactiva el hook mientras armamos strings (evita auto-registro)
-    ScopedHookGuard guard;
-
-    std::string out;
-    out.reserve(256);
-    out += "{";
-    out += "\"active_bytes\":";   out += std::to_string(tracker.activeBytes()); out += ",";
-    out += "\"peak_bytes\":";     out += std::to_string(tracker.peakBytes());   out += ",";
-    out += "\"total_allocs\":";   out += std::to_string(tracker.totalAllocs()); out += ",";
-    out += "\"active_allocs\":";  out += std::to_string(tracker.activeAllocs());
-    out += "}";
     return out;
-}
+  }
 
-std::string snapshotJson(const std::vector<AllocationRecord>& records) {
-    ScopedHookGuard guard;
+  std::string make_summary_json(std::size_t b, std::size_t p, std::size_t c){
+    std::string j = "{\"bytes_in_use\":" + std::to_string(b) +
+                    ",\"peak\":"        + std::to_string(p) +
+                    ",\"alloc_count\":" + std::to_string(c) + "}";
+    return j;
+  }
 
-    std::string out;
-    out.reserve(records.size() * 64 + 32);
-    out += "[";
-    bool first = true;
-    for (const auto& r : records) {
-        if (!first) out += ",";
-        first = false;
-        out += "{";
-        out += "\"ptr\":";          out += std::to_string(reinterpret_cast<uintptr_t>(r.ptr)); out += ",";
-        out += "\"size\":";         out += std::to_string(r.size); out += ",";
-        out += "\"type_name\":";    appendEscaped(out, r.type_name); out += ",";
-        out += "\"timestamp_ns\":"; out += std::to_string(r.timestamp_ns); out += ",";
-        out += "\"thread_id\":";    out += std::to_string(r.thread_id); out += ",";
-        out += "\"file\":";         appendEscaped(out, r.file); out += ",";
-        out += "\"line\":";         out += std::to_string(r.line); out += ",";
-        out += "\"is_array\":";     out += (r.is_array ? "true" : "false");
-        out += "}";
+  std::string make_live_allocs_csv(const std::vector<BlockInfo>& v){
+    std::string out = "ptr,size,alloc_id,thread_id,t_ns,callsite\n";
+    out.reserve(out.size()+v.size()*64);
+    for (const auto& b : v){
+      out += ptr_to_str(b.ptr); out += ",";
+      out += std::to_string(b.size); out += ",";
+      out += u64_to_str(b.alloc_id); out += ",";
+      out += std::to_string(b.thread_id); out += ",";
+      out += u64_to_str(b.t_ns); out += ",";
+      out += b.callsite; out += "\n";
     }
-    out += "]";
     return out;
-}
+  }
 
-} // namespace mp::serialize
+  std::string make_live_allocs_json(const std::vector<BlockInfo>& v){
+    std::string j = "{\"blocks\":[";
+    bool first=true;
+    for (const auto& b : v){
+      if(!first) j += ",";
+      first=false;
+      j += "{\"ptr\":\""+ptr_to_str(b.ptr)+"\",";
+      j += "\"size\":"+std::to_string(b.size)+",";
+      j += "\"alloc_id\":"+u64_to_str(b.alloc_id)+",";
+      j += "\"thread_id\":"+std::to_string(b.thread_id)+",";
+      j += "\"t_ns\":"+u64_to_str(b.t_ns)+",";
+      j += "\"callsite\":\""+json_escape(b.callsite)+"\"}";
+    }
+    j += "]}";
+    return j;
+  }
+
+  std::string make_message_json(const char* type, const std::string& payload){
+    std::string j = "{\"type\":\"";
+    j += type;
+    j += "\",\"payload\":";
+    j += payload; // payload es un objeto JSON
+    j += "}";
+    return j;
+  }
+
+} // namespace mp
