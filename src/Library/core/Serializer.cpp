@@ -4,22 +4,32 @@
 
 namespace mp {
 
+  // Convierte un entero sin signo de 64 bits a string
   static inline std::string u64_to_str(uint64_t v){
     return std::to_string((unsigned long long)v);
   }
+
+  // Convierte un puntero a string representando su direccion numerica
   static inline std::string ptr_to_str(const void* p){
     return std::to_string(reinterpret_cast<std::uintptr_t>(p));
   }
+
+  // Escapa caracteres especiales para que un string sea valido en JSON
   static inline std::string json_escape(const std::string& s){
-    std::string out; out.reserve(s.size()+8);
+    std::string out; 
+    out.reserve(s.size()+8);
     for (char c : s) {
-      if (c=='\\' || c=='\"') { out.push_back('\\'); out.push_back(c); }
+      if (c=='\\' || c=='\"') { 
+        out.push_back('\\'); 
+        out.push_back(c); 
+      }
       else if (c=='\n') out += "\\n";
       else out.push_back(c);
     }
     return out;
   }
 
+  // Genera un JSON con las metricas generales de memoria
   std::string make_summary_json(std::size_t b, std::size_t p, std::size_t c){
     std::string j = "{\"bytes_in_use\":" + std::to_string(b) +
                     ",\"peak\":"        + std::to_string(p) +
@@ -27,6 +37,7 @@ namespace mp {
     return j;
   }
 
+  // Genera un CSV con la lista de bloques de memoria vivos
   std::string make_live_allocs_csv(const std::vector<BlockInfo>& v){
     std::string out = "ptr,size,alloc_id,thread_id,t_ns,callsite\n";
     out.reserve(out.size()+v.size()*64);
@@ -41,6 +52,7 @@ namespace mp {
     return out;
   }
 
+  // Genera un JSON con la lista de bloques de memoria vivos
   std::string make_live_allocs_json(const std::vector<BlockInfo>& v){
     std::string j = "{\"blocks\":[";
     bool first=true;
@@ -58,11 +70,12 @@ namespace mp {
     return j;
   }
 
+  // Genera un mensaje JSON con un tipo y un payload (contenido)
   std::string make_message_json(const char* type, const std::string& payload){
     std::string j = "{\"type\":\"";
     j += type;
     j += "\",\"payload\":";
-    j += payload; // payload es un objeto JSON
+    j += payload; // payload ya es un objeto JSON valido
     j += "}";
     return j;
   }

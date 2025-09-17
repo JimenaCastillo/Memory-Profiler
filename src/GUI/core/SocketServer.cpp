@@ -22,10 +22,11 @@ namespace mp::gui {
 
 // ------------------------- Helpers -------------------------
 
+// Crea un socket de escucha en el puerto dado, soportando IPv6 e IPv4
 static int createListenSocket(uint16_t port) {
     int sock = ::socket(AF_INET6, SOCK_STREAM, 0);
     if (sock < 0) {
-        // fallback a IPv4
+        // Si falla IPv6, intenta IPv4
         sock = ::socket(AF_INET, SOCK_STREAM, 0);
         if (sock < 0) return -1;
     }
@@ -33,10 +34,9 @@ static int createListenSocket(uint16_t port) {
     int yes = 1;
     ::setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 
-    // Intento bind dual-stack (IPv6 con v6only=0); si falla, bind IPv4
+    // Intentar dual-stack: aceptar IPv6 e IPv4
     bool bound = false;
     {
-        // IPv6
         sockaddr_in6 addr6{};
         addr6.sin6_family = AF_INET6;
         addr6.sin6_addr   = in6addr_any;
@@ -50,6 +50,7 @@ static int createListenSocket(uint16_t port) {
         }
     }
 
+    // Si no funciono, usar IPv4
     if (!bound) {
         ::close(sock);
         sock = ::socket(AF_INET, SOCK_STREAM, 0);
@@ -76,8 +77,8 @@ static int createListenSocket(uint16_t port) {
     return sock;
 }
 
+// Extrae un numero simple de un JSON buscando "key":valor
 static uint64_t extractNumber(const std::string& json, const char* key) {
-    // naive parsing: busca "key":<numero>
     std::string pat = std::string("\"") + key + "\":";
     auto pos = json.find(pat);
     if (pos == std::string::npos) return 0;
@@ -92,6 +93,7 @@ static uint64_t extractNumber(const std::string& json, const char* key) {
     return value;
 }
 
+// Quita espacios y saltos de linea de inicio y fin
 static std::string trimCopy(const std::string& s) {
     size_t i = 0, j = s.size();
     while (i < j && (s[i]==' '||s[i]=='\t'||s[i]=='\r'||s[i]=='\n')) ++i;
@@ -106,6 +108,7 @@ public:
     Impl() = default;
     ~Impl() { stop(); }
 
+    // Inicia el servidor en un puerto
     bool start(uint16_t port) {
         std::lock_guard<std::mutex> lk(m_);
         if (running_) return true;
@@ -115,6 +118,7 @@ public:
         return true;
     }
 
+    // Detiene el servidor y cierra sockets
     void stop() {
         {
             std::lock_guard<std::mutex> lk(m_);
@@ -128,16 +132,19 @@ public:
 
     bool isRunning() const noexcept { return running_; }
 
+    // Ultima metrica recibida
     Metrics latest() const {
         std::lock_guard<std::mutex> lk(data_m_);
         return last_;
     }
 
+    // Copia de toda la serie de metricas
     std::vector<Metrics> seriesCopy() const {
         std::lock_guard<std::mutex> lk(data_m_);
         return series_;
     }
 
+    // Saca el ultimo snapshot recibido (si existe)
     bool tryPopLastSnapshot(std::string& out) {
         std::lock_guard<std::mutex> lk(data_m_);
         if (last_snapshot_.empty()) return false;
@@ -146,6 +153,7 @@ public:
         return true;
     }
 
+    // Solicita un snapshot al cliente
     void requestSnapshot() {
         snapshot_flag_.store(true, std::memory_order_release);
     }
@@ -155,6 +163,7 @@ private:
         if (fd >= 0) { ::close(fd); fd = -1; }
     }
 
+    // Bucle principal del servidor
     void runLoop() {
         using clock = std::chrono::steady_clock;
         start_tp_ = clock::now();
@@ -170,7 +179,7 @@ private:
 
         while (running_) {
             if (client_fd_ < 0) {
-                // Esperar cliente (con timeout breve para poder salir)
+                // Esperar conexion
                 struct pollfd pfd { listen_fd_, POLLIN, 0 };
                 int pr = ::poll(&pfd, 1, 250);
                 if (pr > 0 && (pfd.revents & POLLIN)) {
@@ -178,17 +187,15 @@ private:
                     if (client_fd_ >= 0) {
                         std::cout << "[SocketServer] Client connected.\n";
                         rx_.clear();
-                        // En cuanto conecte, pedimos métricas (el cliente las mandará periódicamente solo)
                     }
                 }
-                continue; // loop
+                continue;
             }
 
-            // Cliente conectado: recibir líneas y, si se solicita, emitir "SNAPSHOT\n"
+            // Cliente conectado: leer datos
             struct pollfd pfd { client_fd_, POLLIN, 0 };
             int pr = ::poll(&pfd, 1, 100);
             if (pr < 0) {
-                // error: reiniciar
                 std::cerr << "[SocketServer] poll error; closing client.\n";
                 closeFd(client_fd_);
                 continue;
@@ -202,7 +209,7 @@ private:
                     closeFd(client_fd_);
                 } else {
                     rx_.append(buf, static_cast<size_t>(n));
-                    // Procesar por líneas
+                    // Procesar lineas
                     for (;;) {
                         auto pos = rx_.find('\n');
                         if (pos == std::string::npos) break;
@@ -213,9 +220,9 @@ private:
                 }
             }
 
-            // ¿Se pidió snapshot desde la GUI?
+            // Si se pidio snapshot desde GUI
             if (snapshot_flag_.exchange(false, std::memory_order_acq_rel)) {
-                sendLine("SNAPSHOT\n"); // el cliente responderá con el JSON del snapshot
+                sendLine("SNAPSHOT\n");
             }
         }
 
@@ -223,20 +230,20 @@ private:
         closeFd(listen_fd_);
     }
 
+    // Procesa cada linea recibida
     void handleLine(const std::string& line) {
         if (line.empty()) return;
 
         if (line == "SNAPSHOT") {
-            // Cliente pidió snapshot; para mantener compatibilidad con el cliente que
-            // responde a SNAPSHOT, hacemos eco: reenviamos SNAPSHOT para que él nos devuelva el JSON.
+            // Reenviamos snapshot para que el cliente mande su JSON
             sendLine("SNAPSHOT\n");
             return;
         }
 
         if (!line.empty() && line[0] == '{') {
-            // JSON: puede ser métricas o snapshot
+            // Es JSON (metricas o snapshot)
             if (line.find("\"active_bytes\"") != std::string::npos) {
-                // Métricas
+                // Parsear metricas
                 Metrics m;
                 m.active_bytes  = extractNumber(line, "active_bytes");
                 m.peak_bytes    = extractNumber(line, "peak_bytes");
@@ -249,28 +256,27 @@ private:
                     std::lock_guard<std::mutex> lk(data_m_);
                     last_ = m;
                     series_.push_back(m);
-                    if (series_.size() > 2000) { // evita crecimiento infinito
+                    if (series_.size() > 2000) {
                         series_.erase(series_.begin(), series_.begin() + 1000);
                     }
                 }
 
-                // Log básico
                 std::cout << "[METRICS] active=" << m.active_bytes
                           << "B, peak=" << m.peak_bytes
                           << "B, total_allocs=" << m.total_allocs
                           << ", active_allocs=" << m.active_allocs << "\n";
             } else {
-                // Asumimos snapshot (o algún otro JSON)
+                // Asumir que es snapshot
                 std::lock_guard<std::mutex> lk(data_m_);
                 last_snapshot_ = line;
                 std::cout << "[SNAPSHOT] JSON received (" << line.size() << " bytes)\n";
             }
         } else {
-            // Otra línea informativa
             std::cout << "[INFO] " << line << "\n";
         }
     }
 
+    // Envia una linea de texto al cliente
     void sendLine(const std::string& s) {
         if (client_fd_ < 0) return;
         size_t sent = 0;
@@ -287,7 +293,7 @@ private:
     }
 
 private:
-    // estado red
+    // sockets
     int listen_fd_ { -1 };
     int client_fd_ { -1 };
     uint16_t port_ { 7777 };
@@ -297,7 +303,7 @@ private:
     std::atomic<bool> running_{false};
     std::mutex m_;
 
-    // buffers y datos
+    // buffer recepcion
     std::string rx_;
 
     // datos para GUI
@@ -306,10 +312,10 @@ private:
     std::vector<Metrics> series_;
     std::string last_snapshot_;
 
-    // snapshot on-demand
+    // snapshot bajo demanda
     std::atomic<bool> snapshot_flag_{false};
 
-    // tiempo base
+    // tiempo inicial
     std::chrono::steady_clock::time_point start_tp_;
 };
 
