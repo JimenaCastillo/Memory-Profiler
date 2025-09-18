@@ -2,7 +2,7 @@
 #include <QTimer>
 #include "MainWindow.hpp"
 #include "GUI.hpp"
-#include "Callbacks.hpp"  // Asegúrate de incluir esto
+#include "Callbacks.hpp"
 
 int main(int argc, char *argv[]) {
     // Registrar callbacks de profiling antes de cualquier asignación
@@ -35,6 +35,5 @@ int main(int argc, char *argv[]) {
     mp::gui::stopGUI();
     return ret;
 }
-
 
 //unificacion de codigo
