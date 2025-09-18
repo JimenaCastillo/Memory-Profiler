@@ -72,18 +72,17 @@ file(GLOB_RECURSE GUI_SOURCES
         src/GUI/core/*.cpp)
 
 # Buscar recursivamente todos los headers de la GUI
-file(GLOB_RECURSE GUI_HEADERS
-        CONFIGURE_DEPENDS
-        src/GUI/include/*.h)
+file(GLOB_RECURSE GUI_HEADERS CONFIGURE_DEPENDS
+        src/GUI/include/*.h
+        src/GUI/include/*.hpp
+        src/GUI/include/*.hh
+)
 
 # Crear el ejecutable de la GUI con los fuentes y headers
 # Nota: incluir los headers aquí ayuda a que AUTOMOC procese los que tengan Q_OBJECT
 add_executable(memory_profiler_gui
         ${GUI_SOURCES}
         ${GUI_HEADERS}
-        src/GUI/include/Charts.hpp
-        src/GUI/include/Views.hpp
-        src/GUI/include/GUI.hpp
 )
 
 # Incluir directorios para que la GUI encuentre sus headers y los de la librería
