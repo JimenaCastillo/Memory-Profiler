@@ -9,6 +9,7 @@
 // Qt base
 #include <QVBoxLayout>
 #include <QPainter>
+#include <QDebug>
 
 namespace mp::gui {
 

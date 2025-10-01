@@ -10,6 +10,11 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON) # Generar código position-independent (
 # Activar AUTOMOC para que Qt procese automáticamente los headers con Q_OBJECT
 set(CMAKE_AUTOMOC ON)
 
+# Buscar Qt6 con los módulos Widgets y Charts
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Charts)
+
+get_target_property(QtChartsIncludes Qt6::Charts INTERFACE_INCLUDE_DIRECTORIES)
+
 # Si no se especifica tipo de build, usar RelWithDebInfo (optimizado pero con símbolos de depuración)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
@@ -32,14 +37,20 @@ endif()
 # Crear la librería estática 'memory_profiler' con esos fuentes
 add_library(memory_profiler STATIC ${MEMORY_PROFILER_SOURCES}
         src/GUI/include/Charts.hpp
-        src/GUI/include/Views.hpp
-        src/GUI/include/GUI.hpp)
+        src/GUI/include/Views.hpp)
+
+target_link_libraries(memory_profiler PRIVATE Qt6::Charts)
 
 # Incluir directorios para que otros targets puedan usar los headers de la librería
 target_include_directories(memory_profiler
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Library/include> # Durante la compilación local
         $<INSTALL_INTERFACE:include>                                       # Si se instala la librería
+)
+
+target_include_directories(memory_profiler
+        PRIVATE
+        ${QtChartsIncludes}
 )
 
 # Declarar que esta librería requiere C++17
@@ -63,8 +74,7 @@ target_link_libraries(memory_profiler PUBLIC Threads::Threads)
 # ======================= GUI (Qt6) ==========================
 # ============================================================
 
-# Buscar Qt6 con los módulos Widgets y Charts
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Charts)
+
 
 # Buscar recursivamente todos los .cpp de la GUI
 file(GLOB_RECURSE GUI_SOURCES
@@ -90,6 +100,7 @@ target_include_directories(memory_profiler_gui
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/GUI/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Library/include
+        ${QtChartsIncludes}
 )
 
 # Enlazar la GUI con:

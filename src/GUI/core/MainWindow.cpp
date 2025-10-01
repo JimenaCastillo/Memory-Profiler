@@ -6,17 +6,16 @@
 using namespace mp::gui;
 
 // Constructor de MainWindow
-extern mp::gui::SocketServer g_server;
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent) // Llama al constructor de QMainWindow con el padre
+MainWindow::MainWindow(mp::gui::SocketServer* server, QWidget *parent)
+    : QMainWindow(parent), server_(server) // Llama al constructor de QMainWindow con el padre
 {
     // Crea el widget de pestañas y lo asocia a esta ventana como padre
     tabs = new QTabWidget(this);
 
-    chartsTab = new mp::gui::Charts;
+    chartsTab = new Charts;
     tabs->addTab(chartsTab, "Vista General");
-    QObject::connect(&g_server, &mp::gui::SocketServer::metricsUpdated,
-                 chartsTab, &mp::gui::Charts::updateMemoryUsage);
+    QObject::connect(server_, &SocketServer::metricsUpdated,
+                     chartsTab, &Charts::updateMemoryUsage);
 
     tabs->addTab(Tabs::createMemoryMapTab(), "Mapa de Memoria");
     tabs->addTab(Tabs::createByFileTab(), "Por Archivo");
