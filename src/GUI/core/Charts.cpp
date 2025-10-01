@@ -1,49 +1,69 @@
 #include "Charts.hpp"
-#include <string>
-#include <iostream>
-#include <algorithm>
+
+// Qt Charts
+#include <QtCharts/QChartView>
+#include <QtCharts/QLineSeries>
+#include <QtCharts/QValueAxis>
+#include <QtCharts/QChart>
+
+// Qt base
+#include <QVBoxLayout>
+#include <QPainter>
+
+using namespace QtCharts;
 
 namespace mp::gui {
 
-// Dibuja un grafico de barras ASCII que muestra la memoria activa en el tiempo
-void renderActiveBytesChart(const std::vector<Metrics>& series, int width, int height) {
-    // Si no hay datos, no se puede dibujar nada
-    if (series.empty()) {
-        std::cout << "[Chart] (no data)\n";
-        return;
+    // Constructor: inicializa el gráfico y sus componentes
+    Charts::Charts(QWidget* parent)
+        : QWidget(parent),
+          series(new QLineSeries),
+          chart(new QChart),
+          chartView(new QChartView(chart))
+    {
+        // Configurar la serie de datos
+        chart->addSeries(series);
+        chart->setTitle("Uso de Memoria Activa (active_bytes)");
+        chart->legend()->hide(); // Ocultar leyenda (solo una serie)
+
+        // Eje X: tiempo en milisegundos
+        auto axisX = new QValueAxis;
+        axisX->setTitleText("Tiempo (ms)");
+        axisX->setLabelFormat("%lld");
+        axisX->setTickCount(10);
+        chart->addAxis(axisX, Qt::AlignBottom);
+        series->attachAxis(axisX);
+
+        // Eje Y: memoria activa en bytes
+        auto axisY = new QValueAxis;
+        axisY->setTitleText("Memoria activa (bytes)");
+        axisY->setLabelFormat("%lld");
+        axisY->setTickCount(10);
+        chart->addAxis(axisY, Qt::AlignLeft);
+        series->attachAxis(axisY);
+
+        // Activar suavizado de renderizado
+        chartView->setRenderHint(QPainter::Antialiasing);
+
+        // Layout vertical para contener el gráfico
+        auto layout = new QVBoxLayout(this);
+        layout->addWidget(chartView);
+        setLayout(layout);
     }
 
-    int n = static_cast<int>(series.size());     // cantidad total de muestras
-    int from = std::max(0, n - width);           // empezar desde las ultimas "width" muestras
+    // Slot que recibe métricas y actualiza el gráfico
+    void Charts::updateMemoryUsage(const mp::gui::Metrics& m) {
+        // Agregar nuevo punto a la serie
+        series->append(m.t_ms, m.active_bytes);
 
-    // Buscar el valor maximo de active_bytes para escalar la altura del grafico
-    std::uint64_t maxy = 1;
-    for (int i = from; i < n; ++i) 
-        maxy = std::max(maxy, series[i].active_bytes);
-    if (maxy == 0) maxy = 1;
+        // Ajustar eje X dinámicamente (últimos 60 segundos)
+        auto xMax = m.t_ms;
+        auto xMin = (xMax > 60000) ? xMax - 60000 : 0;
+        chart->axisX()->setRange(xMin, xMax);
 
-    // Crear una "pantalla" (canvas) de altura=height y ancho=(n - from)
-    std::vector<std::string> canvas(height, std::string(static_cast<size_t>(n - from), ' '));
-
-    // Rellenar el canvas con asteriscos segun los valores
-    for (int i = from; i < n; ++i) {
-        std::uint64_t v = series[i].active_bytes; // valor de memoria activa en esta muestra
-        // Calcular altura proporcional al valor respecto al maximo
-        int h = static_cast<int>((static_cast<long double>(v) * height) / maxy);
-        if (h <= 0) h = 1;       // al menos una linea
-        if (h > height) h = height; // no pasar la altura maxima
-
-        size_t x = static_cast<size_t>(i - from); // posicion en el eje X
-        // Dibujar una columna de asteriscos hacia arriba
-        for (int k = 0; k < h; ++k) {
-            canvas[height - 1 - k][x] = '*';
-        }
+        // Ajustar eje Y según el valor máximo observado
+        auto yMax = std::max<std::uint64_t>(m.active_bytes * 1.2, 1000);
+        chart->axisY()->setRange(0, yMax);
     }
-
-    // Mostrar titulo y grafico
-    std::cout << "Active Bytes (last " << (n - from) << " samples), max=" << maxy << "B\n";
-    for (auto& row : canvas) 
-        std::cout << row << "\n";
-}
 
 } // namespace mp::gui

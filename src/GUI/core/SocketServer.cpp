@@ -15,7 +15,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <poll.h>
-#include <errno.h>
+#include <cerrno>
 #include <fcntl.h>
 
 namespace mp::gui {
@@ -105,7 +105,7 @@ static std::string trimCopy(const std::string& s) {
 
 class SocketServer::Impl {
 public:
-    Impl() = default;
+    explicit Impl(SocketServer* owner) : owner_(owner) {}
     ~Impl() { stop(); }
 
     // Inicia el servidor en un puerto
@@ -261,6 +261,13 @@ private:
                     }
                 }
 
+                // Emitir señal para GUI
+                if (owner_) {
+                    QMetaObject::invokeMethod(owner_, [owner = owner_, m]() {
+                        emit owner->metricsUpdated(m);
+                    }, Qt::QueuedConnection);
+                }
+
                 std::cout << "[METRICS] active=" << m.active_bytes
                           << "B, peak=" << m.peak_bytes
                           << "B, total_allocs=" << m.total_allocs
@@ -317,12 +324,15 @@ private:
 
     // tiempo inicial
     std::chrono::steady_clock::time_point start_tp_;
+
+    // puntero al dueño Qt para emitir señales
+    SocketServer* owner_ = nullptr;
 };
 
 // ------------------------- API thin wrapper -------------------------
 
-SocketServer::SocketServer() : impl_(new Impl()) {}
-SocketServer::~SocketServer() { if (impl_) { impl_->stop(); delete impl_; } }
+    SocketServer::SocketServer(QObject* parent): QObject(parent), impl_(new Impl(this)) {}
+    SocketServer::~SocketServer() { if (impl_) { impl_->stop(); delete impl_; } }
 
 bool SocketServer::start(uint16_t port)  { return impl_->start(port); }
 void SocketServer::stop()                { impl_->stop(); }

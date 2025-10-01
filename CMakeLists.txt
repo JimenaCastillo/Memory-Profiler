@@ -102,3 +102,21 @@ target_link_libraries(memory_profiler_gui
         Qt6::Widgets
         Qt6::Charts
 )
+
+# ============================================================
+# ======================= DEMO ===============================
+# ============================================================
+
+add_executable(memory_profiler_demo examples/demo.cpp
+        examples/demo.cpp)
+
+target_include_directories(memory_profiler_demo
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Library/include
+)
+
+target_link_libraries(memory_profiler_demo
+        PRIVATE
+        memory_profiler
+        Threads::Threads
+)
