@@ -1,51 +1,91 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(memory_profiler
-  VERSION 0.1.0
-  LANGUAGES CXX)
+        VERSION 0.1.0
+        LANGUAGES CXX)
 
 # Recomendado para diagnósticos de memoria
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)  # -fPIC para librerías
 
-# Opciones de build por defecto si no se especifica
+# Activar moc para señales/slots de Qt
+set(CMAKE_AUTOMOC ON)
+
+# Tipo de build por defecto si no se especifica
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
 endif()
 
-# Recoger fuentes de la librería (ajusta la ruta si tus .cpp están en otro lugar)
+# Buscar Qt6 Widgets
+find_package(Qt6 REQUIRED COMPONENTS Widgets Charts)
+
+# Recoger fuentes de la biblioteca principal
 file(GLOB_RECURSE MEMORY_PROFILER_SOURCES
-     CONFIGURE_DEPENDS
-     src/Library/*.cpp)
+        CONFIGURE_DEPENDS
+        src/Library/*.cpp)
 
 if(MEMORY_PROFILER_SOURCES STREQUAL "")
   message(FATAL_ERROR "No se encontraron fuentes en src/Library/*.cpp")
 endif()
 
+# Crear la biblioteca estática
 add_library(memory_profiler STATIC ${MEMORY_PROFILER_SOURCES})
 
-# Incluye los headers públicos (ajusta si tus headers están en otra carpeta)
+# Incluir headers públicos
 target_include_directories(memory_profiler
-  PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Library/include>
-    $<INSTALL_INTERFACE:include>)
+        PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/Library/include>
+        $<INSTALL_INTERFACE:include>)
 
+# Activar características modernas de C++
 target_compile_features(memory_profiler PUBLIC cxx_std_17)
 
 # Warnings útiles y frame pointers para mejores perfiles
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   target_compile_options(memory_profiler PRIVATE
-    -Wall -Wextra -Wpedantic -Wconversion
-    -fno-omit-frame-pointer)
+          -Wall -Wextra -Wpedantic -Wconversion
+          -fno-omit-frame-pointer)
 endif()
 
-# pthread si lo usas (bloqueos, TLS, etc.)
+# Enlazar con pthread (usado por SocketClient)
 find_package(Threads REQUIRED)
 target_link_libraries(memory_profiler PUBLIC Threads::Threads)
 
-# (Opcional) defines para evitar recursión en hooks u opciones de la lib
-# target_compile_definitions(memory_profiler PUBLIC MP_ENABLE_DEMANGLE=1)
+# Recoger fuentes de la GUI
+file(GLOB_RECURSE GUI_SOURCES
+        CONFIGURE_DEPENDS
+        src/GUI/*.cpp)
+
+file(GLOB_RECURSE GUI_HEADERS
+        CONFIGURE_DEPENDS
+        src/GUI/*.hpp)
+
+# Crear el ejecutable con la interfaz gráfica
+add_executable(memory_profiler_app
+        ${GUI_SOURCES}
+        src/GUI/core/MainWindow.cpp
+        src/GUI/include/MainWindow.hpp
+        src/GUI/core/ProfilerController.cpp
+        src/GUI/include/ProfilerController.hpp
+        src/GUI/core/MemoryChart.cpp
+        src/GUI/include/MemoryChart.hpp
+        src/GUI/core/main.cpp
+)
+
+# Incluir headers de la GUI y la biblioteca
+target_include_directories(memory_profiler_app
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Library/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/GUI)
+
+# Enlazar el ejecutable con la biblioteca y Qt
+target_link_libraries(memory_profiler_app
+        memory_profiler
+        Qt6::Widgets
+        Qt6::Charts
+        Threads::Threads
+)
 
 # (Opcional) Instalar la librería y headers
 # install(TARGETS memory_profiler EXPORT memory_profilerTargets
