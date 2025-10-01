@@ -14,6 +14,7 @@ static SocketServer g_server;
 
 bool startGUI(std::uint16_t port) {
     if (!g_server.start(port)) {
+
         // Mensaje de error
         std::cerr << "[GUI] Failed to start server.\n";
         return false;
@@ -53,9 +54,6 @@ void tickGUI() {
 
     // Actualizar contador de asignaciones activas en la GUI
     renderAllocCounter(latest.total_allocs);
-
-    // Actualizar gráfico de uso de memoria
-    renderActiveBytesChart(series, 60, 12);
 
     // Cada 20 ticks (~10 segundos), solicitar un snapshot al servidor
     static int cnt = 0;

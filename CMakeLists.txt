@@ -64,7 +64,7 @@ target_link_libraries(memory_profiler PUBLIC Threads::Threads)
 # ============================================================
 
 # Buscar Qt6 con los módulos Widgets y Charts
-find_package(Qt6 REQUIRED COMPONENTS Widgets Charts)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Charts)
 
 # Buscar recursivamente todos los .cpp de la GUI
 file(GLOB_RECURSE GUI_SOURCES
@@ -99,6 +99,7 @@ target_include_directories(memory_profiler_gui
 target_link_libraries(memory_profiler_gui
         PRIVATE
         memory_profiler
+        Qt6::Core
         Qt6::Widgets
         Qt6::Charts
 )
@@ -107,8 +108,7 @@ target_link_libraries(memory_profiler_gui
 # ======================= DEMO ===============================
 # ============================================================
 
-add_executable(memory_profiler_demo examples/demo.cpp
-        examples/demo.cpp)
+add_executable(memory_profiler_demo examples/demo.cpp)
 
 target_include_directories(memory_profiler_demo
         PRIVATE

@@ -1,9 +1,10 @@
 #pragma once
-#include <QWidget>
+#include <QValueAxis>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QChart>
 #include "SocketServer.hpp"
+#include <QWidget>
 
 namespace mp::gui {
 
@@ -19,9 +20,11 @@ namespace mp::gui {
         void updateMemoryUsage(const mp::gui::Metrics& m);
 
     private:
-        QtCharts::QLineSeries* series;
-        QtCharts::QChart* chart;
-        QtCharts::QChartView* chartView;
+        QLineSeries* series;
+        QChart* chart;
+        QChartView* chartView;
+        QValueAxis* axisX;
+        QValueAxis* axisY;
     };
 
 } // namespace mp::gui

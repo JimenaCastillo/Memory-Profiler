@@ -1,5 +1,6 @@
 #include "Tabs.hpp"
 #include "Views.hpp"
+#include "Charts.hpp"
 
 #include <QVBoxLayout>
 #include <QLabel>
@@ -35,16 +36,10 @@ QWidget* Tabs::createOverviewTab() {
     mp::gui::initViews(g_metricsLabel, g_allocTable);
 
     // Leak intencional
-    auto *series = new QLineSeries();
-    series->append(0, 0); // Punto inicial (x=0, y=0)
-
-    auto *chart = new QChart();
-    chart->addSeries(series);
-    chart->createDefaultAxes();
-    chart->setTitle("Uso de memoria en el tiempo");
+    auto* chartsWidget = new mp::gui::Charts;
 
     // Añade el gráfico al layout
-    layout->addWidget(new QChartView(chart));
+    layout->addWidget(chartsWidget);
 
     // Asigna el layout al widget y lo devuelve
     tab->setLayout(layout);
