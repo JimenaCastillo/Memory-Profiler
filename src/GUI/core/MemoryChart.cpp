@@ -1,11 +1,12 @@
 #include "../include/MemoryChart.hpp"
+#include "ProfilerNew.hpp"
 
 MemoryChart::MemoryChart(QWidget* parent)
     : QChartView(parent),
-      series_(new QLineSeries),
-      chart_(new QChart),
-      axisX_(new QValueAxis),
-      axisY_(new QValueAxis),
+      series_(MP_NEW_FT(QLineSeries)),
+      chart_(MP_NEW_FT(QChart)),
+      axisX_(MP_NEW_FT(QValueAxis)),
+      axisY_(MP_NEW_FT(QValueAxis)),
       pointCount_(0)
 {
     chart_->addSeries(series_);
@@ -16,7 +17,7 @@ MemoryChart::MemoryChart(QWidget* parent)
     series_->attachAxis(axisY_);
 
     axisX_->setRange(0, 50);  // muestra los últimos 50 puntos
-    axisY_->setRange(0, 1000); // ajusta según el rango de memoria
+    axisY_->setRange(0, 1500); // ajustar según el rango de memoria
 
     chart_->legend()->hide();
     chart_->setTitle("Historial de uso de memoria");

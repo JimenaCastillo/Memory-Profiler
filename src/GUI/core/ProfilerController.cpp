@@ -1,9 +1,10 @@
 #include "../include/ProfilerController.hpp"
 #include "ProfilerAPI.hpp"  // mp::api::{getMetricsJson, getSnapshotJson}
+#include "ProfilerNew.hpp"
 
 ProfilerController::ProfilerController(QObject* parent)
     : QObject(parent),
-      timer_(new QTimer(this))
+      timer_(MP_NEW_FT(QTimer, this))
 {
     // Actualiza métricas cada 200 ms
     connect(timer_, &QTimer::timeout, this, [this]() {

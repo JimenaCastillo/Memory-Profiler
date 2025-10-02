@@ -1,52 +1,67 @@
 #include "ProfilerAPI.hpp"
-#include "MemoryTracker.hpp"
+#include "Callbacks.hpp"
 #include "Serializer.hpp"
-
 #include <atomic>
-#include <exception>
-#include <string>
 
-namespace mp::api {
+// Flag global atomico que indica si el profiler esta habilitado
+namespace { std::atomic<bool> g_enabled{true}; }
 
-static std::atomic<bool> g_sampling_enabled{true};
+namespace mp {
 
-void setSamplingEnabled(bool enabled) noexcept {
-    g_sampling_enabled.store(enabled, std::memory_order_release);
-}
+  // === Control del profiler ===
 
-bool isSamplingEnabled() noexcept {
-    return g_sampling_enabled.load(std::memory_order_acquire);
-}
+  // Inicia el profiler
+  void start() { g_enabled.store(true, std::memory_order_relaxed); }
 
-ScopedSamplingPause::ScopedSamplingPause(bool pause) noexcept
-    : prev_(isSamplingEnabled()) {
-    if (pause) setSamplingEnabled(false);
-}
+  // Detiene el profiler
+  void stop() { g_enabled.store(false, std::memory_order_relaxed); }
 
-ScopedSamplingPause::~ScopedSamplingPause() {
-    setSamplingEnabled(prev_);
-}
+  // Indica si el profiler esta habilitado
+  bool is_enabled() { return g_enabled.load(std::memory_order_relaxed); }
 
-std::string getMetricsJson() noexcept {
-    try {
-        // Read-only access; MemoryTracker guards its own state.
-        return serialize::metricsJson(MemoryTracker::instance());
-    } catch (const std::exception&) {
-        return std::string("{\"error\":\"getMetricsJson failed\"}");
-    } catch (...) {
-        return std::string("{\"error\":\"getMetricsJson unknown error\"}");
-    }
-}
+  // === Snapshots y metricas ===
 
-std::string getSnapshotJson() noexcept {
-    try {
-        auto snap = MemoryTracker::instance().snapshotLive();
-        return serialize::snapshotJson(snap);
-    } catch (const std::exception&) {
-        return std::string("{\"error\":\"getSnapshotJson failed\"}");
-    } catch (...) {
-        return std::string("{\"error\":\"getSnapshotJson unknown error\"}");
-    }
-}
+  // Obtiene un nuevo id de snapshot
+  SnapshotId snapshot() {
+    const auto& cb = get_callbacks();
+    return cb.snapshot();
+  }
 
-} // namespace mp::api
+  // Devuelve un resumen en formato JSON con metricas basicas
+  std::string summary_json() {
+    const auto& cb = get_callbacks();
+    return make_summary_json(cb.bytesInUse(), cb.peakBytes(), cb.allocCount());
+  }
+
+  // Devuelve una lista de asignaciones vivas en formato CSV
+  std::string live_allocs_csv() {
+    const auto& cb = get_callbacks();
+    return make_live_allocs_csv(cb.liveBlocks());
+  }
+
+  // Devuelve un mensaje JSON con el resumen de metricas
+  std::string summary_message_json() {
+    const auto& cb = get_callbacks();
+    auto payload = make_summary_json(cb.bytesInUse(), cb.peakBytes(), cb.allocCount());
+    return make_message_json("SUMMARY", payload);
+  }
+
+  // Devuelve un mensaje JSON con la lista de asignaciones vivas
+  std::string live_allocs_message_json() {
+    const auto& cb = get_callbacks();
+    auto payload = make_live_allocs_json(cb.liveBlocks());
+    return make_message_json("LIVE_ALLOCS", payload);
+  }
+
+  // === Secciones de medicion (scope) ===
+  // Por ahora son no-op (no hacen nada)
+  ScopedSection::ScopedSection(const char* /*name*/) {}
+  ScopedSection::~ScopedSection() {}
+
+  // === Wrappers de compatibilidad (ej. para SocketClient demo) ===
+  namespace api {
+    std::string getMetricsJson()  { return summary_message_json(); }
+    std::string getSnapshotJson() { return live_allocs_message_json(); }
+  }
+
+} // namespace mp

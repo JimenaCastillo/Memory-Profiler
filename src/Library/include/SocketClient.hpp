@@ -4,45 +4,46 @@
 
 namespace mp {
 
-/**
- * @brief TCP client that periodically sends metrics JSON and responds to
- *        "SNAPSHOT" requests with a snapshot JSON.
- *
- * Protocol:
- *   - Outgoing: newline-delimited JSON frames (metrics, snapshot)
- *   - Incoming: lines of text; if a line == "SNAPSHOT", send snapshot JSON
- *
- * Threading:
- *   - start() spawns a background thread; stop() joins it.
- */
-class SocketClient {
-public:
-    SocketClient();
-    ~SocketClient();
-
-    SocketClient(const SocketClient&) = delete;
-    SocketClient& operator=(const SocketClient&) = delete;
-
     /**
-     * @brief Start the client thread. If already running, no-op.
-     * @param host Server host (e.g., "127.0.0.1")
-     * @param port Server port (e.g., 7777)
+     * @brief Cliente TCP que envia periodicamente metricas en JSON
+     *        y responde a solicitudes "SNAPSHOT" con snapshot JSON.
+     *
+     * Protocolo:
+     *   - Salida: frames JSON separados por salto de linea (metrics, snapshot)
+     *   - Entrada: lineas de texto; si la linea == "SNAPSHOT", se envia snapshot JSON
+     *
+     * Hilos:
+     *   - start() crea un hilo en segundo plano; stop() lo une al hilo principal
      */
-    void start(const std::string& host = "127.0.0.1", uint16_t port = 7777);
+    class SocketClient {
+    public:
+        SocketClient();
+        ~SocketClient();
 
-    /**
-     * @brief Stop the client thread if running. Safe to call multiple times.
-     */
-    void stop();
+        // Prohibir copia y asignacion
+        SocketClient(const SocketClient&) = delete;
+        SocketClient& operator=(const SocketClient&) = delete;
 
-    /**
-     * @brief Returns true if worker thread is running.
-     */
-    bool isRunning() const noexcept;
+        /**
+         * @brief Inicia el hilo del cliente. Si ya esta corriendo, no hace nada.
+         * @param host Host del servidor (por ejemplo "127.0.0.1")
+         * @param port Puerto del servidor (por ejemplo 7777)
+         */
+        void start(const std::string& host = "127.0.0.1", uint16_t port = 7777);
 
-private:
-    class Impl;
-    Impl* impl_;
-};
+        /**
+         * @brief Detiene el hilo del cliente si esta corriendo. Seguro llamar varias veces.
+         */
+        void stop();
+
+        /**
+         * @brief Retorna true si el hilo trabajador esta corriendo
+         */
+        bool isRunning() const noexcept;
+
+    private:
+        class Impl; // implementacion interna (pimpl idiom)
+        Impl* impl_; // puntero a la implementacion real
+    };
 
 } // namespace mp

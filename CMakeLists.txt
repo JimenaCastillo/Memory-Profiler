@@ -18,7 +18,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Buscar Qt6 Widgets
-find_package(Qt6 REQUIRED COMPONENTS Widgets Charts)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Charts Gui)
 
 # Recoger fuentes de la biblioteca principal
 file(GLOB_RECURSE MEMORY_PROFILER_SOURCES
@@ -30,7 +30,11 @@ if(MEMORY_PROFILER_SOURCES STREQUAL "")
 endif()
 
 # Crear la biblioteca estática
-add_library(memory_profiler STATIC ${MEMORY_PROFILER_SOURCES})
+add_library(memory_profiler STATIC ${MEMORY_PROFILER_SOURCES}
+        src/Library/core/Callbacks.cpp
+        src/Library/include/Callbacks.hpp
+        src/Library/core/CallbacksRegistration.cpp
+        src/Library/include/ReentryGuard.hpp)
 
 # Incluir headers públicos
 target_include_directories(memory_profiler
@@ -71,6 +75,8 @@ add_executable(memory_profiler_app
         src/GUI/core/MemoryChart.cpp
         src/GUI/include/MemoryChart.hpp
         src/GUI/core/main.cpp
+        src/GUI/core/MemoryMapView.cpp
+        src/GUI/include/MemoryMapView.hpp
 )
 
 # Incluir headers de la GUI y la biblioteca
@@ -84,6 +90,7 @@ target_link_libraries(memory_profiler_app
         memory_profiler
         Qt6::Widgets
         Qt6::Charts
+        Qt6::Gui
         Threads::Threads
 )
 

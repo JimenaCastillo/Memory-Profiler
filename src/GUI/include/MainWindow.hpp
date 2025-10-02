@@ -1,6 +1,7 @@
 #pragma once
 #include <QMainWindow>
 #include "MemoryChart.hpp"
+#include "MemoryMapView.hpp"
 
 class QLabel;
 class QPushButton;
@@ -27,4 +28,8 @@ private:
     QPushButton* snapshotButton_;
     MemoryChart* chartView_;
     QStatusBar* statusBar_;
+    MemoryMapView* memoryMapView_;
+    QTabWidget* tabWidget_;
+    QWidget* generalTab_;
+    QWidget* memoryMapTab_;
 };

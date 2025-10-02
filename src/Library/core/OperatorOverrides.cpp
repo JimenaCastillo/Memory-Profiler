@@ -1,105 +1,72 @@
 #include "OperatorOverrides.hpp"
-#include "MemoryTracker.hpp"
-#include "Callsite.hpp"      // para obtener file/line/type
-#include "ProfilerAPI.hpp"   // para isSamplingEnabled()
+#include "ProfilerNew.hpp"
+#include "Callbacks.hpp"
+#include "Callsite.hpp"
 
-#include <cstdlib>   // std::malloc, std::free
-#include <new>       // std::bad_alloc
-#include <cstdint>
+#include <new>
+#include <cstdlib>
 
-// Bandera reentrante por hilo (definición)
-namespace mp {
-thread_local bool in_hook = false;
-}
+// Flag de reentrancia visible desde otros TU (Translation Units)
+// Se usa para evitar recursion infinita cuando dentro de un hook
+// se ejecuta otra llamada a new/delete
+namespace mp { thread_local bool in_hook = false; }
 
-// RAII local para marcar la región del hook
-namespace {
-struct HookScope {
-    bool prev;
-    HookScope() : prev(mp::in_hook) { mp::in_hook = true; }
-    ~HookScope() { mp::in_hook = prev; }
-};
-} // namespace
-
-// --- Overrides globales ---
-// NOTA: usamos malloc/free para evitar dependencia circular con el runtime de new/delete.
-//       Registramos en MemoryTracker sólo cuando NO estamos reentrando.
-
+// === Sobrecarga del operador new ===
 void* operator new(std::size_t sz) {
-    if (mp::in_hook) {
-        void* p = std::malloc(sz ? sz : 1);
-        if (!p) throw std::bad_alloc();
-        return p;
-    }
+  if (sz == 0) sz = 1;                 // Nunca pedir 0 bytes, minimo 1
+  void* p = std::malloc(sz);           // Reservamos memoria con malloc
+  if (!p) throw std::bad_alloc{};      // Si malloc falla, lanzamos excepcion
 
-    HookScope scope;
-    void* p = std::malloc(sz ? sz : 1);
-    if (!p) throw std::bad_alloc();
-
-    // Obtener metadatos desde TLS
-    mp::CallsiteInfo cs = mp::currentCallsite();
-    const char* file = cs.file ? cs.file : "unknown";
-    int         line = cs.line;
-    const char* type = cs.type_name ? cs.type_name : "unknown";
-
-    if (mp::api::isSamplingEnabled()) {
-        mp::MemoryTracker::instance().onAlloc(
-            p, sz, type, file, line, /*is_array=*/false
-        );
-    }
-    return p;
+  // Si no estamos dentro de un hook, registramos la asignacion
+  if (!mp::in_hook) {
+    mp::in_hook = true;                // Activamos flag de proteccion
+    const auto& cb = mp::get_callbacks(); // Obtenemos callbacks registrados
+    cb.onAlloc(p, sz, nullptr);        // Notificamos asignacion
+    mp::in_hook = false;               // Desactivamos flag
+  }
+  return p;
 }
 
+// === Sobrecarga del operador delete ===
 void operator delete(void* p) noexcept {
-    if (!p) return;
-
-    if (mp::in_hook) {
-        std::free(p);
-        return;
-    }
-
-    HookScope scope;
-    if (mp::api::isSamplingEnabled()) {
-        mp::MemoryTracker::instance().onFree(p, /*is_array=*/false);
-    }
-    std::free(p);
+  if (!p) return;                      // Ignorar puntero nulo
+  if (!mp::in_hook) {
+    mp::in_hook = true;
+    const auto& cb = mp::get_callbacks();
+    cb.onFree(p);                      // Notificamos liberacion
+    mp::in_hook = false;
+  }
+  std::free(p);                        // Liberamos memoria real
 }
 
+// === Sobrecarga del operador new[] ===
 void* operator new[](std::size_t sz) {
-    if (mp::in_hook) {
-        void* p = std::malloc(sz ? sz : 1);
-        if (!p) throw std::bad_alloc();
-        return p;
-    }
+  if (sz == 0) sz = 1;
+  void* p = std::malloc(sz);
+  if (!p) throw std::bad_alloc{};
 
-    HookScope scope;
-    void* p = std::malloc(sz ? sz : 1);
-    if (!p) throw std::bad_alloc();
-
-    mp::CallsiteInfo cs = mp::currentCallsite();
-    const char* file = cs.file ? cs.file : "unknown";
-    int         line = cs.line;
-    const char* type = cs.type_name ? cs.type_name : "unknown";
-
-    if (mp::api::isSamplingEnabled()) {
-        mp::MemoryTracker::instance().onAlloc(
-            p, sz, type, file, line, /*is_array=*/true
-        );
-    }
-    return p;
+  if (!mp::in_hook) {
+    mp::in_hook = true;
+    const auto& cb = mp::get_callbacks();
+    cb.onAlloc(p, sz, nullptr);        // Notificamos asignacion de arreglo
+    mp::in_hook = false;
+  }
+  return p;
 }
 
+// === Sobrecarga del operador delete[] ===
 void operator delete[](void* p) noexcept {
-    if (!p) return;
-
-    if (mp::in_hook) {
-        std::free(p);
-        return;
-    }
-
-    HookScope scope;
-    if (mp::api::isSamplingEnabled()) {
-        mp::MemoryTracker::instance().onFree(p, /*is_array=*/true);
-    }
-    std::free(p);
+  if (!p) return;
+  if (!mp::in_hook) {
+    mp::in_hook = true;
+    const auto& cb = mp::get_callbacks();
+    cb.onFree(p);                      // Notificamos liberacion de arreglo
+    mp::in_hook = false;
+  }
+  std::free(p);
 }
+
+// === Sobrecargas de delete con tamaño ===
+// Se implementan solo para evitar warnings del compilador
+void operator delete(void* p, std::size_t) noexcept { operator delete(p); }
+void operator delete[](void* p, std::size_t) noexcept { operator delete[](p); }

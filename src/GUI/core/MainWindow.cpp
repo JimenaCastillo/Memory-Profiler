@@ -1,6 +1,8 @@
 #include "../include/MainWindow.hpp"
 #include "../include/ProfilerController.hpp"
 #include "../include/MemoryChart.hpp"
+#include "../include/MemoryMapView.hpp"
+#include "ProfilerNew.hpp"
 
 #include <QHBoxLayout>
 #include <QLabel>
@@ -10,39 +12,51 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QStatusBar>
-
-
+#include <QTabWidget>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
-      controller_(new ProfilerController(this)),
-      statusLabel_(new QLabel("Estado: detenido")),
-      metricsView_(new QTextEdit),
-      startButton_(new QPushButton("Iniciar")),
-      stopButton_(new QPushButton("Detener")),
-      snapshotButton_(new QPushButton("Snapshot"))
+      controller_(MP_NEW_FT(ProfilerController, this)),
+      statusLabel_(MP_NEW_FT(QLabel,"Estado: detenido")),
+      metricsView_( MP_NEW_FT(QTextEdit)),
+      startButton_(MP_NEW_FT(QPushButton,"Iniciar")),
+      stopButton_(MP_NEW_FT(QPushButton,"Detener")),
+      snapshotButton_(MP_NEW_FT(QPushButton,"Snapshot"))
 {
     metricsView_->setReadOnly(true);
 
-    auto* layout = new QVBoxLayout;
-    layout->addWidget(statusLabel_);
-    layout->addWidget(metricsView_);
+    tabWidget_ = MP_NEW_FT(QTabWidget, this);
 
-    chartView_ = new MemoryChart;
-    layout->addWidget(chartView_);
+    // Vista general
+    generalTab_ = MP_NEW_FT(QWidget);
+    auto* generalLayout = MP_NEW_FT(QVBoxLayout, generalTab_);
+    generalLayout->addWidget(statusLabel_);
+    generalLayout->addWidget(metricsView_);
 
-    auto* buttonLayout = new QHBoxLayout;
+    chartView_ = MP_NEW_FT(MemoryChart);
+    generalLayout->addWidget(chartView_);
+
+    auto* buttonLayout = MP_NEW_FT(QVBoxLayout);
     buttonLayout->addWidget(startButton_);
     buttonLayout->addWidget(stopButton_);
     buttonLayout->addWidget(snapshotButton_);
-    layout->addLayout(buttonLayout);
+    generalLayout->addLayout(buttonLayout);
 
-    auto* central = new QWidget;
-    central->setLayout(layout);
-    setCentralWidget(central);
+    tabWidget_->addTab(generalTab_, "Vista general");
+
+    // Mapa de memoria
+    memoryMapTab_ = MP_NEW_FT(QWidget);
+    memoryMapView_ = MP_NEW_FT(MemoryMapView);
+    auto* mapLayout = MP_NEW_FT(QVBoxLayout, memoryMapTab_);
+    mapLayout->addWidget(memoryMapView_);
+    tabWidget_->addTab(memoryMapTab_, "Mapa de memoria");
+
+    // Finaliza
+    setCentralWidget(tabWidget_);
+
     setWindowTitle("Memory Profiler");
 
-    statusBar_ = new QStatusBar(this);
+    statusBar_ = MP_NEW_FT(QStatusBar,this);
     setStatusBar(statusBar_);
     statusBar_->showMessage("Listo para iniciar el profiling");
 
@@ -71,14 +85,16 @@ void MainWindow::onSnapshotClicked() {
     QString snapshot = controller_->getSnapshot();
     metricsView_->append("📸 Snapshot:\n" + snapshot + "\n");
     statusBar_->showMessage("📸 Snapshot capturado", 3000);
+    memoryMapView_->updateFromJson(snapshot);
 }
 
 void MainWindow::updateMetrics(const QString& json) {
     metricsView_->setPlainText("📊 Métricas:\n" + json);
     QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
     if (doc.isObject()) {
-        QJsonObject obj = doc.object();
-        double mem = obj.value("active_bytes").toDouble();  // ajusta según tu JSON
+        QJsonObject root = doc.object();
+        QJsonObject payload = root.value("payload").toObject();
+        double mem = payload.value("bytes_in_use").toDouble();  // ajusta según tu JSON
         chartView_->addDataPoint(mem/1024.0);
     }
 }
