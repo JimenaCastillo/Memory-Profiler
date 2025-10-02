@@ -1,6 +1,6 @@
 #include "../include/ProfilerController.hpp"
-#include "ProfilerAPI.hpp"  // mp::api::{getMetricsJson, getSnapshotJson}
-#include "ProfilerNew.hpp"
+#include "../Library/include/ProfilerAPI.hpp"  // mp::api::{getMetricsJson, getSnapshotJson}
+#include "../Library/include/ProfilerNew.hpp"
 
 ProfilerController::ProfilerController(QObject* parent)
     : QObject(parent),

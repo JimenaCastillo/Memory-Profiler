@@ -1,4 +1,6 @@
 #include "../include/MemoryMapView.hpp"
+#include "../Library/include/ProfilerNew.hpp"
+
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -7,8 +9,6 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QPainter>
-
-#include "ProfilerNew.hpp"
 
 MemoryMapView::MemoryMapView(QWidget* parent)
     : QGraphicsView(parent), scene_(MP_NEW_FT(QGraphicsScene, this)) {

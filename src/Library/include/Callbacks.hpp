@@ -8,7 +8,7 @@ namespace mp {
 
     struct Callbacks {
         // callsite puede ser nullptr si el modelo no lo usa
-        std::function<void(void*, std::size_t, const char*)> onAlloc;
+        std::function<void(void*, std::size_t, const char*, const char*, int, bool)> onAlloc;
         std::function<void(void*)>                           onFree;
 
         std::function<std::size_t()> bytesInUse;

@@ -2,6 +2,7 @@
 #include <QMainWindow>
 #include "MemoryChart.hpp"
 #include "MemoryMapView.hpp"
+#include "FileAllocationsTab.hpp"
 
 class QLabel;
 class QPushButton;
@@ -32,4 +33,7 @@ private:
     QTabWidget* tabWidget_;
     QWidget* generalTab_;
     QWidget* memoryMapTab_;
+    FileAllocationsTab* fileAllocTab_;
+    QWidget* fileAllocTabContainer_;
+    QTableWidget* topAllocationsTable_;
 };

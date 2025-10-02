@@ -19,7 +19,7 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#include "ProfilerNew.hpp"
+#include "../include/ProfilerNew.hpp"
 
 namespace mp {
 

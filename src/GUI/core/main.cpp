@@ -1,6 +1,6 @@
 #include <QApplication>
 #include "../include/MainWindow.hpp"
-#include "../Library/core/CallbacksRegistration.cpp"
+#include "../Library/include/CallbacksRegistration.hpp"
 
 int main(int argc, char *argv[]) {
     mp::install_callbacks_with_memorytracker();

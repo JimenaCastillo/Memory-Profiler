@@ -2,7 +2,8 @@
 #include "../include/ProfilerController.hpp"
 #include "../include/MemoryChart.hpp"
 #include "../include/MemoryMapView.hpp"
-#include "ProfilerNew.hpp"
+#include "../Library/include/ProfilerNew.hpp"
+#include "../include/FileAllocationStats.hpp"
 
 #include <QHBoxLayout>
 #include <QLabel>
@@ -13,6 +14,8 @@
 #include <QJsonObject>
 #include <QStatusBar>
 #include <QTabWidget>
+#include <QTableWidget>
+#include <QHeaderView>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
@@ -36,6 +39,12 @@ MainWindow::MainWindow(QWidget* parent)
     chartView_ = MP_NEW_FT(MemoryChart);
     generalLayout->addWidget(chartView_);
 
+    topAllocationsTable_ = MP_NEW_FT(QTableWidget, this);
+    topAllocationsTable_->setColumnCount(3);
+    topAllocationsTable_->setHorizontalHeaderLabels({"Archivo", "Asignaciones", "Memoria"});
+    topAllocationsTable_->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    generalLayout->addWidget(topAllocationsTable_);
+
     auto* buttonLayout = MP_NEW_FT(QVBoxLayout);
     buttonLayout->addWidget(startButton_);
     buttonLayout->addWidget(stopButton_);
@@ -50,6 +59,14 @@ MainWindow::MainWindow(QWidget* parent)
     auto* mapLayout = MP_NEW_FT(QVBoxLayout, memoryMapTab_);
     mapLayout->addWidget(memoryMapView_);
     tabWidget_->addTab(memoryMapTab_, "Mapa de memoria");
+
+    // Asignación por archivo fuente
+    fileAllocTabContainer_ = MP_NEW_FT(QWidget);
+    fileAllocTab_ = MP_NEW_FT(FileAllocationsTab);
+    auto* fileLayout = MP_NEW_FT(QVBoxLayout, fileAllocTabContainer_);
+    fileLayout->addWidget(fileAllocTab_);
+    tabWidget_->addTab(fileAllocTabContainer_, "Asignación por archivo");
+
 
     // Finaliza
     setCentralWidget(tabWidget_);
@@ -86,6 +103,7 @@ void MainWindow::onSnapshotClicked() {
     metricsView_->append("📸 Snapshot:\n" + snapshot + "\n");
     statusBar_->showMessage("📸 Snapshot capturado", 3000);
     memoryMapView_->updateFromJson(snapshot);
+    updateMetrics(snapshot);
 }
 
 void MainWindow::updateMetrics(const QString& json) {
@@ -96,5 +114,15 @@ void MainWindow::updateMetrics(const QString& json) {
         QJsonObject payload = root.value("payload").toObject();
         double mem = payload.value("bytes_in_use").toDouble();  // ajusta según tu JSON
         chartView_->addDataPoint(mem/1024.0);
+
+        auto topFiles = computeTopAllocFiles();
+        topAllocationsTable_->setRowCount(static_cast<int>(topFiles.size()));
+
+        for (int i = 0; i < topFiles.size(); ++i) {
+            const auto& s = topFiles[i];
+            topAllocationsTable_->setItem(i, 0, new QTableWidgetItem(s.file));
+            topAllocationsTable_->setItem(i, 1, new QTableWidgetItem(QString::number(s.count)));
+            topAllocationsTable_->setItem(i, 2, new QTableWidgetItem(QString::number(s.total_bytes / 1024.0, 'f', 2) + " KB"));
+        }
     }
 }

@@ -1,6 +1,6 @@
-#include "MemoryTracker.hpp"
+#include "../include/MemoryTracker.hpp"
 #include <new> // std::nothrow (por si se usa en el futuro)
-#include "ReentryGuard.hpp"  // para ScopedHookGuard
+#include "../include/ReentryGuard.hpp"  // para ScopedHookGuard
 
 namespace mp {
 

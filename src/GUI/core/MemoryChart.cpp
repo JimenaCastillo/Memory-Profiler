@@ -1,5 +1,5 @@
 #include "../include/MemoryChart.hpp"
-#include "ProfilerNew.hpp"
+#include "../Library/include/ProfilerNew.hpp"
 
 MemoryChart::MemoryChart(QWidget* parent)
     : QChartView(parent),

@@ -34,7 +34,8 @@ add_library(memory_profiler STATIC ${MEMORY_PROFILER_SOURCES}
         src/Library/core/Callbacks.cpp
         src/Library/include/Callbacks.hpp
         src/Library/core/CallbacksRegistration.cpp
-        src/Library/include/ReentryGuard.hpp)
+        src/Library/include/ReentryGuard.hpp
+        src/Library/include/CallbacksRegistration.hpp)
 
 # Incluir headers públicos
 target_include_directories(memory_profiler
@@ -77,6 +78,10 @@ add_executable(memory_profiler_app
         src/GUI/core/main.cpp
         src/GUI/core/MemoryMapView.cpp
         src/GUI/include/MemoryMapView.hpp
+        src/GUI/core/FileAllocationStats.cpp
+        src/GUI/include/FileAllocationStats.hpp
+        src/GUI/core/FileAllocationsTab.cpp
+        src/GUI/include/FileAllocationsTab.hpp
 )
 
 # Incluir headers de la GUI y la biblioteca
