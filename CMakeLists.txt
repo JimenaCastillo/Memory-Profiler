@@ -18,7 +18,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Buscar Qt6 Widgets
-find_package(Qt6 REQUIRED COMPONENTS Widgets Charts Gui)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Charts Gui Core Network)
 
 # Recoger fuentes de la biblioteca principal
 file(GLOB_RECURSE MEMORY_PROFILER_SOURCES
@@ -82,6 +82,10 @@ add_executable(memory_profiler_app
         src/GUI/include/FileAllocationStats.hpp
         src/GUI/core/FileAllocationsTab.cpp
         src/GUI/include/FileAllocationsTab.hpp
+        src/GUI/core/MemoryLeaksTab.cpp
+        src/GUI/include/MemoryLeaksTab.hpp
+        src/GUI/core/LeakStats.cpp
+        src/GUI/include/LeakStats.hpp
 )
 
 # Incluir headers de la GUI y la biblioteca
@@ -96,8 +100,15 @@ target_link_libraries(memory_profiler_app
         Qt6::Widgets
         Qt6::Charts
         Qt6::Gui
+        Qt6::Core
+        Qt6::Network
         Threads::Threads
 )
+
+add_executable(demo_client examples/demo.cpp
+        examples/demo.cpp)
+target_include_directories(demo_client PRIVATE ${CMAKE_SOURCE_DIR}/Library/include)
+target_link_libraries(demo_client PRIVATE memory_profiler)
 
 # (Opcional) Instalar la librería y headers
 # install(TARGETS memory_profiler EXPORT memory_profilerTargets

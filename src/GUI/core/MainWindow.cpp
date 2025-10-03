@@ -4,6 +4,7 @@
 #include "../include/MemoryMapView.hpp"
 #include "../Library/include/ProfilerNew.hpp"
 #include "../include/FileAllocationStats.hpp"
+#include "include/LeakStats.hpp"
 
 #include <QHBoxLayout>
 #include <QLabel>
@@ -20,14 +21,12 @@
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
       controller_(MP_NEW_FT(ProfilerController, this)),
-      statusLabel_(MP_NEW_FT(QLabel,"Estado: detenido")),
-      metricsView_( MP_NEW_FT(QTextEdit)),
-      startButton_(MP_NEW_FT(QPushButton,"Iniciar")),
+      statusLabel_(MP_NEW_FT(QLabel,"Estado: escuchando")),
+      metricsView_(MP_NEW_FT(QTextEdit)),
       stopButton_(MP_NEW_FT(QPushButton,"Detener")),
       snapshotButton_(MP_NEW_FT(QPushButton,"Snapshot"))
 {
     metricsView_->setReadOnly(true);
-
     tabWidget_ = MP_NEW_FT(QTabWidget, this);
 
     // Vista general
@@ -46,7 +45,6 @@ MainWindow::MainWindow(QWidget* parent)
     generalLayout->addWidget(topAllocationsTable_);
 
     auto* buttonLayout = MP_NEW_FT(QVBoxLayout);
-    buttonLayout->addWidget(startButton_);
     buttonLayout->addWidget(stopButton_);
     buttonLayout->addWidget(snapshotButton_);
     generalLayout->addLayout(buttonLayout);
@@ -67,43 +65,59 @@ MainWindow::MainWindow(QWidget* parent)
     fileLayout->addWidget(fileAllocTab_);
     tabWidget_->addTab(fileAllocTabContainer_, "Asignación por archivo");
 
+    // Memory Leaks
+    leaksTabContainer_ = MP_NEW_FT(QWidget);
+    leaksTab_ = MP_NEW_FT(MemoryLeaksTab);
+    auto* leaksLayout = MP_NEW_FT(QVBoxLayout, leaksTabContainer_);
+    leaksLayout->addWidget(leaksTab_);
+    tabWidget_->addTab(leaksTabContainer_, "Memory leaks");
 
     // Finaliza
     setCentralWidget(tabWidget_);
-
     setWindowTitle("Memory Profiler");
 
     statusBar_ = MP_NEW_FT(QStatusBar,this);
     setStatusBar(statusBar_);
-    statusBar_->showMessage("Listo para iniciar el profiling");
+    statusBar_->showMessage("Servidor activo en puerto 7777");
 
-    connect(startButton_, &QPushButton::clicked, this, &MainWindow::onStartClicked);
     connect(stopButton_, &QPushButton::clicked, this, &MainWindow::onStopClicked);
     connect(snapshotButton_, &QPushButton::clicked, this, &MainWindow::onSnapshotClicked);
     connect(controller_, &ProfilerController::metricsUpdated, this, &MainWindow::updateMetrics);
-}
+    connect(controller_, &ProfilerController::clientConnected, this, [this]() {
+    statusLabel_->setText("Estado: conectado");
+    statusBar_->showMessage("Cliente conectado", 3000);
+    });
 
-void MainWindow::onStartClicked() {
     controller_->start();
-    if (controller_->isRunning())
-        statusLabel_->setText("Estado: ejecutando");
-    else
-        statusLabel_->setText("Estado: desconectado");
-    statusBar_->showMessage("Profiling iniciado", 3000);  // mensaje por 3 segundos
 }
 
 void MainWindow::onStopClicked() {
-    controller_->stop();
-    statusLabel_->setText("Estado: detenido");
-    statusBar_->showMessage("Profiling detenido", 3000);
+    if (statusLabel_->text() == "Estado: escuchando") {
+        controller_->stop();
+        statusLabel_->setText("Estado: detenido");
+        statusBar_->showMessage("Servidor detenido", 3000);
+        stopButton_->setText("Reanudar");
+    } else {
+        controller_->start();
+        statusLabel_->setText("Estado: escuchando");
+        statusBar_->showMessage("Servidor reanudado", 3000);
+        stopButton_->setText("Detener");
+    }
 }
 
 void MainWindow::onSnapshotClicked() {
+    if (!controller_->hasClientConnected()) {
+        statusBar_->showMessage("No hay cliente conectado. Snapshot no disponible.", 3000);
+        return;
+    }
+
     QString snapshot = controller_->getSnapshot();
     metricsView_->append("📸 Snapshot:\n" + snapshot + "\n");
     statusBar_->showMessage("📸 Snapshot capturado", 3000);
     memoryMapView_->updateFromJson(snapshot);
     updateMetrics(snapshot);
+    auto leaks = computeLeakSummary();
+    leaksTab_->updateFromLeaks(leaks);
 }
 
 void MainWindow::updateMetrics(const QString& json) {
@@ -112,8 +126,8 @@ void MainWindow::updateMetrics(const QString& json) {
     if (doc.isObject()) {
         QJsonObject root = doc.object();
         QJsonObject payload = root.value("payload").toObject();
-        double mem = payload.value("bytes_in_use").toDouble();  // ajusta según tu JSON
-        chartView_->addDataPoint(mem/1024.0);
+        double mem = payload.value("bytes_in_use").toDouble();
+        chartView_->addDataPoint(mem / 1024.0);
 
         auto topFiles = computeTopAllocFiles();
         topAllocationsTable_->setRowCount(static_cast<int>(topFiles.size()));

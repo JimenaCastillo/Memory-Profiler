@@ -3,6 +3,7 @@
 #include "MemoryChart.hpp"
 #include "MemoryMapView.hpp"
 #include "FileAllocationsTab.hpp"
+#include "MemoryLeaksTab.hpp"
 
 class QLabel;
 class QPushButton;
@@ -15,7 +16,6 @@ public:
     explicit MainWindow(QWidget* parent = nullptr);
 
 private slots:
-    void onStartClicked();
     void onStopClicked();
     void onSnapshotClicked();
     void updateMetrics(const QString& json);
@@ -36,4 +36,6 @@ private:
     FileAllocationsTab* fileAllocTab_;
     QWidget* fileAllocTabContainer_;
     QTableWidget* topAllocationsTable_;
+    QWidget* leaksTabContainer_;
+    MemoryLeaksTab* leaksTab_;
 };

@@ -2,7 +2,8 @@
 #include <QObject>
 #include <QTimer>
 #include <QString>
-#include "SocketClient.hpp"
+#include <QTcpServer>
+#include <QTcpSocket>
 
 class ProfilerController : public QObject {
     Q_OBJECT
@@ -10,26 +11,23 @@ public:
     explicit ProfilerController(QObject* parent = nullptr);
     ~ProfilerController();
 
-    // Inicia el profiling y comienza a emitir métricas periódicamente
-    void start();
+    void start();       // Inicia el servidor y el temporizador
+    void stop();        // Detiene el servidor y el temporizador
 
-    // Detiene el profiling y la emisión de métricas
-    void stop();
-
-    // Verifica si el cliente está activo
-    bool isRunning() const;
-
-    // Obtiene las métricas actuales en formato JSON
-    QString getLatestMetrics() const;
-
-    // Solicita un snapshot en formato JSON
-    QString getSnapshot() const;
+    [[nodiscard]] QString getLatestMetrics() const;
+    [[nodiscard]] QString getSnapshot() const;
+    [[nodiscard]] bool hasClientConnected() const;
 
     signals:
-        // Señal emitida cada 200 ms con las métricas actualizadas
-        void metricsUpdated(const QString& json);
+        void metricsUpdated(const QString& json);  // Señal con datos recibidos
+        void clientConnected();
+
+private slots:
+    void onNewConnection();
+    void onReadyRead();
 
 private:
-    QTimer* timer_;              // Temporizador para emitir métricas periódicas
-    mp::SocketClient client_;    // Cliente TCP que se comunica con el servidor
+    QTimer* timer_;
+    QTcpServer* server_;
+    QTcpSocket* clientSocket_;
 };
