@@ -1,4 +1,4 @@
-#include <QApplication>
+#include <QtWidgets/QApplication>
 #include "../include/MainWindow.hpp"
 #include "../Library/include/CallbacksRegistration.hpp"
 
