@@ -15,6 +15,7 @@ class MemoryLeaksTab : public QWidget {
     Q_OBJECT
 public:
     explicit MemoryLeaksTab(QWidget* parent = nullptr);
+    void updateFromJson(const QString& json);
     void updateFromLeaks(const LeakSummary& summary);
 
 private:

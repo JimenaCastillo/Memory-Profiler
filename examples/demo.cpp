@@ -1,6 +1,7 @@
 #include "SocketClient.hpp"
 #include "ProfilerAPI.hpp"
 #include "ProfilerNew.hpp"
+#include "CallbacksRegistration.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -10,7 +11,7 @@
 
 using namespace std::chrono_literals;
 
-// Un bloque de tamaño configurable para “ver” variaciones en active_bytes
+// Un bloque de tamaño configurable para "ver" variaciones en active_bytes
 struct Blob {
     explicit Blob(size_t sz) : size(sz) { data = new char[size]; }
     ~Blob() { delete[] data; }
@@ -24,6 +25,8 @@ static Blob* make_blob(size_t sz) {
 }
 
 int main() {
+    mp::install_callbacks_with_memorytracker();
+
     // 1) Arranca el cliente para hablar con la GUI (127.0.0.1:7777 por defecto)
     static mp::SocketClient client;
     client.start("127.0.0.1", 7777);
@@ -49,7 +52,7 @@ int main() {
         std::this_thread::sleep_for(10ms);
     }
 
-    // FASE B) Churn: asigna y libera para hacer “sierra” en la gráfica
+    // FASE B) Churn: asigna y libera para hacer "sierra" en la gráfica
     std::cout << "[demo] CHURN...\n";
     for (int i = 0; i < 800; ++i) {
         // 2 asignaciones

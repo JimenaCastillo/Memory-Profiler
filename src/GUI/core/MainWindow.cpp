@@ -13,10 +13,12 @@
 #include <QWidget>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QStatusBar>
 #include <QTabWidget>
 #include <QTableWidget>
 #include <QHeaderView>
+#include <algorithm>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
@@ -84,8 +86,8 @@ MainWindow::MainWindow(QWidget* parent)
     connect(snapshotButton_, &QPushButton::clicked, this, &MainWindow::onSnapshotClicked);
     connect(controller_, &ProfilerController::metricsUpdated, this, &MainWindow::updateMetrics);
     connect(controller_, &ProfilerController::clientConnected, this, [this]() {
-    statusLabel_->setText("Estado: conectado");
-    statusBar_->showMessage("Cliente conectado", 3000);
+        statusLabel_->setText("Estado: conectado");
+        statusBar_->showMessage("Cliente conectado", 3000);
     });
 
     controller_->start();
@@ -111,29 +113,73 @@ void MainWindow::onSnapshotClicked() {
         return;
     }
 
-    QString snapshot = controller_->getSnapshot();
-    metricsView_->append("📸 Snapshot:\n" + snapshot + "\n");
-    statusBar_->showMessage("📸 Snapshot capturado", 3000);
-    memoryMapView_->updateFromJson(snapshot);
-    updateMetrics(snapshot);
-    auto leaks = computeLeakSummary();
-    leaksTab_->updateFromLeaks(leaks);
+    // Enviar comando SNAPSHOT al cliente
+    controller_->requestSnapshot();
+    statusBar_->showMessage("📸 Solicitando snapshot...", 3000);
 }
 
 void MainWindow::updateMetrics(const QString& json) {
-    metricsView_->setPlainText("📊 Métricas:\n" + json);
     QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
-    if (doc.isObject()) {
-        QJsonObject root = doc.object();
+    if (!doc.isObject()) return;
+
+    QJsonObject root = doc.object();
+    QString type = root.value("type").toString();
+
+    if (type == "SUMMARY") {
+        // Es un mensaje de métricas
+        metricsView_->setPlainText("📊 Métricas:\n" + json);
+
         QJsonObject payload = root.value("payload").toObject();
         double mem = payload.value("bytes_in_use").toDouble();
         chartView_->addDataPoint(mem / 1024.0);
 
-        auto topFiles = computeTopAllocFiles();
-        topAllocationsTable_->setRowCount(static_cast<int>(topFiles.size()));
+    } else if (type == "LIVE_ALLOCS") {
+        // Es un snapshot - actualizar TODAS las vistas
+        metricsView_->append("\n📸 Snapshot recibido:\n" + json);
+        statusBar_->showMessage("📸 Snapshot actualizado", 3000);
 
-        for (int i = 0; i < topFiles.size(); ++i) {
-            const auto& s = topFiles[i];
+        QJsonObject payload = root.value("payload").toObject();
+        QJsonArray blocks = payload.value("blocks").toArray();
+
+        // 1. Actualizar mapa de memoria
+        memoryMapView_->updateFromJson(json);
+
+        // 2. Actualizar tabla de asignaciones por archivo
+        fileAllocTab_->updateFromJson(json);
+
+        // 3. Actualizar tabla de leaks
+        leaksTab_->updateFromJson(json);
+
+        // 4. Actualizar top allocations en vista general
+        QMap<QString, FileAllocStats> fileStats;
+
+        for (const QJsonValue& val : blocks) {
+            QJsonObject block = val.toObject();
+            QString file = block.value("file").toString();
+            int line = block.value("line").toInt();
+            double size = block.value("size").toDouble();
+
+            if (file.isEmpty() || file == "?") {
+                continue; // Ignorar entradas sin información de archivo
+            }
+
+            QString key = file + ":" + QString::number(line);
+            fileStats[key].file = key;
+            fileStats[key].count += 1;
+            fileStats[key].total_bytes += static_cast<size_t>(size);
+        }
+
+        // Ordenar por tamaño y tomar top 3
+        QList<FileAllocStats> statsList = fileStats.values();
+        std::sort(statsList.begin(), statsList.end(), [](const FileAllocStats& a, const FileAllocStats& b) {
+            return a.total_bytes > b.total_bytes;
+        });
+
+        int topN = std::min(3, static_cast<int>(statsList.size()));
+        topAllocationsTable_->setRowCount(topN);
+
+        for (int i = 0; i < topN; ++i) {
+            const auto& s = statsList[i];
             topAllocationsTable_->setItem(i, 0, new QTableWidgetItem(s.file));
             topAllocationsTable_->setItem(i, 1, new QTableWidgetItem(QString::number(s.count)));
             topAllocationsTable_->setItem(i, 2, new QTableWidgetItem(QString::number(s.total_bytes / 1024.0, 'f', 2) + " KB"));

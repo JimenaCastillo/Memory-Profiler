@@ -13,6 +13,11 @@ namespace mp {
         std::uint32_t thread_id  = 0;
         std::uint64_t t_ns       = 0;
         std::string   callsite;            // "file:line[:func]"
+
+        // Campos adicionales para la GUI
+        std::string   file;                // archivo fuente
+        int           line       = 0;      // línea de código
+        std::string   type_name;           // nombre del tipo
     };
 
 } // namespace mp

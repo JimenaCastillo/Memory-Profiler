@@ -7,10 +7,10 @@ LeakSummary computeLeakSummary() {
 
     for (const auto& b : blocks) {
         LeakInfo info;
-        info.file = b.file ? QString(b.file) : "?:0";
+        info.file = b.file ? QString::fromStdString(std::string(b.file)) : QString("?");
         info.line = b.line;
         info.size = b.size;
-        info.type = b.type_name ? QString(b.type_name) : "unknown";
+        info.type = b.type_name ? QString::fromStdString(std::string(b.type_name)) : QString("unknown");
         info.address = b.ptr;
         info.timestamp_ns = b.timestamp_ns;
 

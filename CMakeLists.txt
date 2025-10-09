@@ -105,10 +105,9 @@ target_link_libraries(memory_profiler_app
         Threads::Threads
 )
 
-add_executable(demo_client examples/demo.cpp
-        examples/demo.cpp)
+add_executable(demo_client examples/demo.cpp)
 target_include_directories(demo_client PRIVATE ${CMAKE_SOURCE_DIR}/Library/include)
-target_link_libraries(demo_client PRIVATE memory_profiler)
+target_link_libraries(demo_client PRIVATE memory_profiler Threads::Threads)
 
 # (Opcional) Instalar la librería y headers
 # install(TARGETS memory_profiler EXPORT memory_profilerTargets

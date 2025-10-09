@@ -64,7 +64,10 @@ namespace mp {
       j += "\"alloc_id\":"+u64_to_str(b.alloc_id)+",";
       j += "\"thread_id\":"+std::to_string(b.thread_id)+",";
       j += "\"t_ns\":"+u64_to_str(b.t_ns)+",";
-      j += "\"callsite\":\""+json_escape(b.callsite)+"\"}";
+      j += "\"callsite\":\""+json_escape(b.callsite)+"\",";
+      j += "\"file\":\""+json_escape(b.file)+"\",";
+      j += "\"line\":"+std::to_string(b.line)+",";
+      j += "\"type_name\":\""+json_escape(b.type_name)+"\"}";
     }
     j += "]}";
     return j;

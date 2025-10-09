@@ -1,6 +1,9 @@
 #include "../include/MemoryLeaksTab.hpp"
 #include <QHeaderView>
 #include <QTableWidgetItem>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 
 MemoryLeaksTab::MemoryLeaksTab(QWidget* parent)
     : QWidget(parent),
@@ -22,7 +25,42 @@ MemoryLeaksTab::MemoryLeaksTab(QWidget* parent)
     layout->addWidget(barChartView_);
     layout->addWidget(pieChartView_);
     layout->addWidget(timeChartView_);
+}
 
+void MemoryLeaksTab::updateFromJson(const QString& json) {
+    QJsonDocument doc = QJsonDocument::fromJson(json.toUtf8());
+    if (!doc.isObject()) return;
+
+    QJsonObject root = doc.object();
+    QJsonObject payload = root.value("payload").toObject();
+    QJsonArray blocks = payload.value("blocks").toArray();
+
+    LeakSummary summary;
+
+    for (const QJsonValue& val : blocks) {
+        QJsonObject block = val.toObject();
+
+        LeakInfo info;
+        info.file = block.value("file").toString();
+        info.line = block.value("line").toInt();
+        info.size = static_cast<size_t>(block.value("size").toDouble());
+        info.type = block.value("type_name").toString();
+        info.timestamp_ns = static_cast<uint64_t>(block.value("t_ns").toDouble());
+
+        summary.total_leaked_bytes += info.size;
+        summary.total_leaks += 1;
+        summary.leaks.push_back(info);
+
+        if (info.size > summary.largest_leak_size) {
+            summary.largest_leak_size = info.size;
+            summary.largest_leak_file = info.file;
+        }
+
+        summary.leakCountByFile[info.file] += 1;
+        summary.leakBytesByFile[info.file] += info.size;
+    }
+
+    updateFromLeaks(summary);
 }
 
 void MemoryLeaksTab::updateFromLeaks(const LeakSummary& summary) {
@@ -43,6 +81,7 @@ void MemoryLeaksTab::updateFromLeaks(const LeakSummary& summary) {
         leakTable_->setItem(i, 3, new QTableWidgetItem(leak.type));
     }
 
+    // Gráficos
     QBarSeries* barSeries = new QBarSeries();
     QBarSet* set = new QBarSet("Fugas");
 
@@ -77,7 +116,7 @@ void MemoryLeaksTab::updateFromLeaks(const LeakSummary& summary) {
 
     QLineSeries* timeSeries = new QLineSeries();
     for (const auto& leak : summary.leaks) {
-        qint64 t = static_cast<qint64>(leak.timestamp_ns); // Simulación de tiempo
+        qint64 t = static_cast<qint64>(leak.timestamp_ns);
         timeSeries->append(t, static_cast<qreal>(leak.size) / 1024.0);
     }
 

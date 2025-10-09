@@ -8,7 +8,7 @@ std::vector<FileAllocStats> computeFileAllocStats() {
 
     auto blocks = mp::MemoryTracker::instance().snapshotLive();
     for (const auto& b : blocks) {
-        QString file = b.file ? QString(b.file) : "?:0";
+        QString file = b.file ? QString::fromStdString(std::string(b.file)) : QString("?");
         QString key = file + ":" + QString::number(b.line);
         FileAllocStats& stat = map[key];
         stat.file = key;

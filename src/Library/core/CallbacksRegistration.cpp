@@ -65,9 +65,19 @@ void install_callbacks_with_memorytracker() {
 
             // Si tenemos información de archivo y línea, la guardamos
             if (r.file && *r.file) {
+                b.file = std::string(r.file);
+                b.line = r.line;
                 b.callsite = std::string(r.file) + ":" + std::to_string(r.line);
             } else {
+                b.file = "?";
+                b.line = 0;
                 b.callsite = "?:0"; // Si no hay información, se pone un valor por defecto
+            }
+
+            if (r.type_name && *r.type_name) {
+                b.type_name = std::string(r.type_name);
+            } else {
+                b.type_name = "unknown";
             }
 
             // Agregamos el bloque a la lista
