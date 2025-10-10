@@ -6,9 +6,12 @@
 #include <QtCharts/QChartView>
 #include <QtCharts/QBarSeries>
 #include <QtCharts/QPieSeries>
+#include <QtCharts/QScatterSeries>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QBarSet>
-#include <QtCharts/QCategoryAxis>
+#include <QtCharts/QBarCategoryAxis>
+#include <QtCharts/QValueAxis>
+#include <QtCharts/QPieSlice>
 #include "LeakStats.hpp"
 
 class MemoryLeaksTab : public QWidget {

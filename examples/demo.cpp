@@ -19,6 +19,30 @@ struct Blob {
     char*  data;
 };
 
+// ============ AÑADIR ESTAS ESTRUCTURAS NUEVAS ============
+struct TestData {
+    int* values;
+    explicit TestData(int n) : values(new int[n]) {}
+    ~TestData() { delete[] values; }
+};
+
+struct ComplexObject {
+    std::string name;
+    std::vector<int> data;
+    double* matrix;
+
+    explicit ComplexObject(const std::string& n, size_t size)
+        : name(n), matrix(new double[size * size]) {
+        data.reserve(size);
+        for (size_t i = 0; i < size; ++i) {
+            data.push_back(static_cast<int>(i));
+        }
+    }
+
+    ~ComplexObject() { delete[] matrix; }
+};
+// ========================================================
+
 // Helper que crea un Blob usando MP_NEW_FT para capturar file/line/type
 static Blob* make_blob(size_t sz) {
     return MP_NEW_FT(Blob, sz);
@@ -41,11 +65,38 @@ int main() {
     std::vector<Blob*> live;  // objetos en vida
     live.reserve(10'000);
 
+    // ============ FASE INICIAL: Asignaciones de prueba ============
+    std::cout << "[demo] FASE DE PRUEBA: Creando objetos diversos...\n";
+
+    // Crear varios TestData para verificar el rastreo
+    auto test1 = MP_NEW_FT(TestData, 100);   // Esta línea aparecerá en la GUI
+    auto test2 = MP_NEW_FT(TestData, 200);   // Esta línea aparecerá en la GUI
+    auto test3 = MP_NEW_FT(TestData, 300);   // Esta línea aparecerá en la GUI
+
+    std::cout << "[demo] TestData creados. Esperando 2s...\n";
+    std::this_thread::sleep_for(2s);
+
+    // Crear objetos complejos
+    auto complex1 = MP_NEW_FT(ComplexObject, "Objeto-A", 50);  // Esta línea aparecerá
+    auto complex2 = MP_NEW_FT(ComplexObject, "Objeto-B", 75);  // Esta línea aparecerá
+
+    std::cout << "[demo] Objetos complejos creados. Esperando 2s...\n";
+    std::this_thread::sleep_for(2s);
+
+    // Liberar algunos para ver cómo cambia
+    delete test1;
+    delete complex1;
+
+    std::cout << "[demo] Algunos objetos liberados. Esperando 2s...\n";
+    std::cout << "[demo] metrics=" << mp::api::getMetricsJson() << "\n";
+    std::this_thread::sleep_for(2s);
+    // ================================================================
+
     // FASE A) Warmup: sube active_bytes de forma estable
     std::cout << "[demo] WARMUP...\n";
     for (int i = 0; i < 400; ++i) {
         size_t sz = size_dist(rng);
-        live.push_back(make_blob(sz));                 // allocate
+        live.push_back(make_blob(sz));                 // allocate (línea 24 original)
         if (i % 50 == 0) {
             std::cout << "[demo] metrics=" << mp::api::getMetricsJson() << "\n";
         }
@@ -91,8 +142,18 @@ int main() {
     }
 
     std::cout << "[demo] metrics(final, with leak)=" << mp::api::getMetricsJson() << "\n";
-    std::cout << "[demo] sleeping 5s — check GUI (graph + counter). You can trigger SNAPSHOT from server.\n";
-    std::this_thread::sleep_for(5s);
+    std::cout << "[demo] ⚠️  OBJETOS PENDIENTES (para verificar GUI):\n";
+    std::cout << "[demo]    - test2 (TestData, 200 ints)\n";
+    std::cout << "[demo]    - test3 (TestData, 300 ints)\n";
+    std::cout << "[demo]    - complex2 (ComplexObject con matriz 75x75)\n";
+    std::cout << "[demo]    - " << live.size() << " Blobs sin liberar\n";
+    std::cout << "[demo] sleeping 10s — HAZ SNAPSHOT DESDE LA GUI AHORA!\n";
+    std::this_thread::sleep_for(10s);
+
+    // Limpieza final (opcional - puedes comentar esto para ver más leaks)
+    delete test2;
+    delete test3;
+    delete complex2;
 
     // Cierra el cliente (los objetos que quedaron en 'live' quedan como leak a propósito)
     client.stop();

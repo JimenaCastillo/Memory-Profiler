@@ -34,6 +34,11 @@ void FileAllocationsTab::updateFromJson(const QString& json) {
         int line = block.value("line").toInt();
         double size = block.value("size").toDouble();
 
+        // FILTRAR bloques sin información válida
+        if (file.isEmpty() || file == "?" || line == 0) {
+            continue;
+        }
+
         QString key = file + ":" + QString::number(line);
         fileStats[key].file = key;
         fileStats[key].count += 1;

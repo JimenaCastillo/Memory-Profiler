@@ -1,6 +1,5 @@
 #include "../include/ProfilerController.hpp"
 #include "../Library/include/ProfilerAPI.hpp"
-#include "../Library/include/ProfilerNew.hpp"
 #include <QHostAddress>
 #include <QTcpSocket>
 #include <QDebug>
@@ -10,8 +9,8 @@
 
 ProfilerController::ProfilerController(QObject* parent)
     : QObject(parent),
-      timer_(MP_NEW_FT(QTimer, this)),
-      server_(MP_NEW_FT(QTcpServer, this)),
+      timer_(new QTimer(this)),
+      server_(new QTcpServer(this)),
       clientSocket_(nullptr),
       receiveBuffer_()
 {
@@ -57,7 +56,6 @@ void ProfilerController::onNewConnection() {
     emit clientConnected();
 }
 
-// Función auxiliar para verificar si tenemos un JSON completo
 static bool isCompleteJson(const QString& str) {
     int braceCount = 0;
     bool inString = false;
@@ -90,7 +88,6 @@ static bool isCompleteJson(const QString& str) {
         } else if (c == '}') {
             braceCount--;
             if (braceCount == 0) {
-                // JSON completo encontrado
                 return true;
             }
         }
@@ -105,29 +102,22 @@ void ProfilerController::onReadyRead() {
 
     qDebug() << "[ProfilerController] Buffer acumulado:" << receiveBuffer_.size() << "bytes";
 
-    // Intentar extraer mensajes JSON completos
     while (!receiveBuffer_.isEmpty()) {
-        // Buscar el inicio de un JSON
         int jsonStart = receiveBuffer_.indexOf('{');
         if (jsonStart == -1) {
-            // No hay JSON en el buffer
             receiveBuffer_.clear();
             break;
         }
 
-        // Descartar contenido antes del JSON
         if (jsonStart > 0) {
             receiveBuffer_.remove(0, jsonStart);
         }
 
-        // Verificar si tenemos un JSON completo
         if (!isCompleteJson(receiveBuffer_)) {
-            // JSON incompleto, esperar más datos
             qDebug() << "[ProfilerController] JSON incompleto, esperando más datos...";
             break;
         }
 
-        // Encontrar el final del JSON completo
         int braceCount = 0;
         bool inString = false;
         bool escape = false;
@@ -167,22 +157,18 @@ void ProfilerController::onReadyRead() {
         }
 
         if (jsonEnd == -1) {
-            // No deberíamos llegar aquí, pero por seguridad
             break;
         }
 
-        // Extraer el mensaje JSON completo
         QString message = receiveBuffer_.left(jsonEnd + 1);
         receiveBuffer_.remove(0, jsonEnd + 1);
 
-        // Remover el \n si existe después del JSON
         if (!receiveBuffer_.isEmpty() && receiveBuffer_[0] == '\n') {
             receiveBuffer_.remove(0, 1);
         }
 
         qDebug() << "[ProfilerController] JSON completo extraído, tamaño:" << message.size() << "bytes";
 
-        // Validar JSON
         QJsonParseError parseError;
         QJsonDocument doc = QJsonDocument::fromJson(message.toUtf8(), &parseError);
 
@@ -195,7 +181,6 @@ void ProfilerController::onReadyRead() {
 
         qDebug() << "[ProfilerController] ✓ JSON válido recibido";
 
-        // Identificar tipo de mensaje
         QJsonObject root = doc.object();
         QString type = root.value("type").toString();
         qDebug() << "[ProfilerController] Tipo de mensaje:" << type;
@@ -203,8 +188,7 @@ void ProfilerController::onReadyRead() {
         emit metricsUpdated(message);
     }
 
-    // Protección: limpiar buffer si crece demasiado
-    if (receiveBuffer_.size() > 50 * 1024 * 1024) {  // 50 MB
+    if (receiveBuffer_.size() > 50 * 1024 * 1024) {
         qDebug() << "[ProfilerController] WARNING: Buffer muy grande (" << receiveBuffer_.size()
                  << "bytes), limpiando...";
         receiveBuffer_.clear();

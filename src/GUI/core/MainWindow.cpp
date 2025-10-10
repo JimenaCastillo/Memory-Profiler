@@ -21,32 +21,33 @@
 #include <algorithm>
 
 MainWindow::MainWindow(QWidget* parent)
-    : QMainWindow(parent),
-      controller_(MP_NEW_FT(ProfilerController, this)),
-      statusLabel_(MP_NEW_FT(QLabel,"Estado: escuchando")),
-      metricsView_(MP_NEW_FT(QTextEdit)),
-      stopButton_(MP_NEW_FT(QPushButton,"Detener")),
-      snapshotButton_(MP_NEW_FT(QPushButton,"Snapshot"))
+    : QMainWindow(parent)
 {
+    controller_ = new ProfilerController(this);
+    statusLabel_ = new QLabel("Estado: escuchando");
+    metricsView_ = new QTextEdit();
+    stopButton_ = new QPushButton("Detener");
+    snapshotButton_ = new QPushButton("Snapshot");
+
     metricsView_->setReadOnly(true);
-    tabWidget_ = MP_NEW_FT(QTabWidget, this);
+    tabWidget_ = new QTabWidget(this);
 
     // Vista general
-    generalTab_ = MP_NEW_FT(QWidget);
-    auto* generalLayout = MP_NEW_FT(QVBoxLayout, generalTab_);
+    generalTab_ = new QWidget();
+    auto* generalLayout = new QVBoxLayout(generalTab_);
     generalLayout->addWidget(statusLabel_);
     generalLayout->addWidget(metricsView_);
 
-    chartView_ = MP_NEW_FT(MemoryChart);
+    chartView_ = new MemoryChart();
     generalLayout->addWidget(chartView_);
 
-    topAllocationsTable_ = MP_NEW_FT(QTableWidget, this);
+    topAllocationsTable_ = new QTableWidget(this);
     topAllocationsTable_->setColumnCount(3);
     topAllocationsTable_->setHorizontalHeaderLabels({"Archivo", "Asignaciones", "Memoria"});
     topAllocationsTable_->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     generalLayout->addWidget(topAllocationsTable_);
 
-    auto* buttonLayout = MP_NEW_FT(QVBoxLayout);
+    auto* buttonLayout = new QVBoxLayout();
     buttonLayout->addWidget(stopButton_);
     buttonLayout->addWidget(snapshotButton_);
     generalLayout->addLayout(buttonLayout);
@@ -54,23 +55,23 @@ MainWindow::MainWindow(QWidget* parent)
     tabWidget_->addTab(generalTab_, "Vista general");
 
     // Mapa de memoria
-    memoryMapTab_ = MP_NEW_FT(QWidget);
-    memoryMapView_ = MP_NEW_FT(MemoryMapView);
-    auto* mapLayout = MP_NEW_FT(QVBoxLayout, memoryMapTab_);
+    memoryMapTab_ = new QWidget();
+    memoryMapView_ = new MemoryMapView();
+    auto* mapLayout = new QVBoxLayout(memoryMapTab_);
     mapLayout->addWidget(memoryMapView_);
     tabWidget_->addTab(memoryMapTab_, "Mapa de memoria");
 
     // Asignación por archivo fuente
-    fileAllocTabContainer_ = MP_NEW_FT(QWidget);
-    fileAllocTab_ = MP_NEW_FT(FileAllocationsTab);
-    auto* fileLayout = MP_NEW_FT(QVBoxLayout, fileAllocTabContainer_);
+    fileAllocTabContainer_ = new QWidget();
+    fileAllocTab_ = new FileAllocationsTab();
+    auto* fileLayout = new QVBoxLayout(fileAllocTabContainer_);
     fileLayout->addWidget(fileAllocTab_);
     tabWidget_->addTab(fileAllocTabContainer_, "Asignación por archivo");
 
     // Memory Leaks
-    leaksTabContainer_ = MP_NEW_FT(QWidget);
-    leaksTab_ = MP_NEW_FT(MemoryLeaksTab);
-    auto* leaksLayout = MP_NEW_FT(QVBoxLayout, leaksTabContainer_);
+    leaksTabContainer_ = new QWidget();
+    leaksTab_ = new MemoryLeaksTab();
+    auto* leaksLayout = new QVBoxLayout(leaksTabContainer_);
     leaksLayout->addWidget(leaksTab_);
     tabWidget_->addTab(leaksTabContainer_, "Memory leaks");
 
@@ -78,7 +79,7 @@ MainWindow::MainWindow(QWidget* parent)
     setCentralWidget(tabWidget_);
     setWindowTitle("Memory Profiler");
 
-    statusBar_ = MP_NEW_FT(QStatusBar,this);
+    statusBar_ = new QStatusBar(this);
     setStatusBar(statusBar_);
     statusBar_->showMessage("Servidor activo en puerto 7777");
 
@@ -113,7 +114,6 @@ void MainWindow::onSnapshotClicked() {
         return;
     }
 
-    // Enviar comando SNAPSHOT al cliente
     controller_->requestSnapshot();
     statusBar_->showMessage("📸 Solicitando snapshot...", 3000);
 }
@@ -126,7 +126,6 @@ void MainWindow::updateMetrics(const QString& json) {
     QString type = root.value("type").toString();
 
     if (type == "SUMMARY") {
-        // Es un mensaje de métricas
         metricsView_->setPlainText("📊 Métricas:\n" + json);
 
         QJsonObject payload = root.value("payload").toObject();
@@ -134,23 +133,18 @@ void MainWindow::updateMetrics(const QString& json) {
         chartView_->addDataPoint(mem / 1024.0);
 
     } else if (type == "LIVE_ALLOCS") {
-        // Es un snapshot - actualizar TODAS las vistas
         metricsView_->append("\n📸 Snapshot recibido:\n" + json);
         statusBar_->showMessage("📸 Snapshot actualizado", 3000);
 
         QJsonObject payload = root.value("payload").toObject();
         QJsonArray blocks = payload.value("blocks").toArray();
 
-        // 1. Actualizar mapa de memoria
+        // Actualizar todas las vistas
         memoryMapView_->updateFromJson(json);
-
-        // 2. Actualizar tabla de asignaciones por archivo
         fileAllocTab_->updateFromJson(json);
-
-        // 3. Actualizar tabla de leaks
         leaksTab_->updateFromJson(json);
 
-        // 4. Actualizar top allocations en vista general
+        // Actualizar top allocations - FILTRAR entradas sin archivo
         QMap<QString, FileAllocStats> fileStats;
 
         for (const QJsonValue& val : blocks) {
@@ -159,8 +153,9 @@ void MainWindow::updateMetrics(const QString& json) {
             int line = block.value("line").toInt();
             double size = block.value("size").toDouble();
 
-            if (file.isEmpty() || file == "?") {
-                continue; // Ignorar entradas sin información de archivo
+            // FILTRAR: Ignorar bloques sin información de archivo válida
+            if (file.isEmpty() || file == "?" || line == 0) {
+                continue;
             }
 
             QString key = file + ":" + QString::number(line);
