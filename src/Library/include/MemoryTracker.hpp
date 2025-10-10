@@ -60,15 +60,17 @@ namespace mp {
         static std::uint64_t nowNs();
         static std::uint32_t thisThreadId();
 
-    private:
-        mutable std::mutex mu_;
+        mutable std::mutex mu_; // Protección para multithreading
+
+        // MAPA PRINCIPAL: ptr → información completa
         std::unordered_map<void*, AllocationRecord> live_;
 
-        std::size_t total_allocs_  = 0;
-        std::size_t active_allocs_ = 0;
+        // MÉTRICAS ACUMULADAS
+        std::size_t total_allocs_  = 0; // Total de new ejecutados
+        std::size_t active_allocs_ = 0; // new sin delete correspondiente
         std::size_t total_bytes_   = 0; // (por ahora no se expone, pero se mantiene)
-        std::size_t active_bytes_  = 0;
-        std::size_t peak_bytes_    = 0;
+        std::size_t active_bytes_  = 0; // Bytes en uso AHORA
+        std::size_t peak_bytes_    = 0; // Máximo histórico
     };
 
 } // namespace mp

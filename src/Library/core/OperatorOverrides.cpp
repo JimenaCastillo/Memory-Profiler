@@ -6,31 +6,40 @@
 #include <new>
 #include <cstdlib>
 
-// Flag de reentrancia visible desde otros TU (Translation Units)
+// Variable thread_local que previene recursión infinita
+// Si in_hook=true, significa que YA estamos dentro de un hook
+// y NO debemos volver a llamar callbacks
 namespace mp { thread_local bool in_hook = false; }
 
 // === Sobrecarga del operador new ===
 void* operator new(std::size_t sz) {
+  // 1. Si tamaño es 0, ajustar a 1 (estándar C++)
   if (sz == 0) sz = 1;
+
+  // 2. Asignar memoria con malloc (NO con new, ¡evita recursión!)
   void* p = std::malloc(sz);
-  if (!p) throw std::bad_alloc{};
+  if (!p) throw std::bad_alloc{}; // Si falla, lanzar excepción
 
+  // 3. Si NO estamos en recursión, registrar la asignación
   if (!mp::in_hook) {
-    mp::in_hook = true;
-    const auto& cb = mp::get_callbacks();
+    mp::in_hook = true; // Activar flag de recursión
 
-    // IMPORTANTE: Capturar callsite ANTES de cualquier operación
+    const auto& cb = mp::get_callbacks(); // Obtener callbacks registrados
+
+    // CRÍTICO: Capturar callsite ANTES de cualquier operación
+    // Esto obtiene: archivo, línea, tipo
     auto cs = mp::currentCallsite();
 
-    // Notificar asignación
+    // Notificar al sistema que se asignó memoria
+    // Parámetros: ptr, tamaño, tipo, archivo, línea, es_array
     cb.onAlloc(p, sz, cs.type_name, cs.file, cs.line, false);
 
-    // Limpiar callsite DESPUÉS de notificar
+    // Limpiar callsite para la próxima asignación
     mp::clearCallsite();
 
-    mp::in_hook = false;
+    mp::in_hook = false; // Desactivar flag
   }
-  return p;
+  return p; // Retornar el puntero asignado
 }
 
 // === Sobrecarga del operador delete ===

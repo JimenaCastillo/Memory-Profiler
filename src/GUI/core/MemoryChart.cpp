@@ -68,17 +68,18 @@ MemoryChart::MemoryChart(QWidget* parent)
 }
 
 void MemoryChart::addDataPoint(qreal value) {
+    // 1. AGREGAR PUNTO
     series_->append(pointCount_, value);
     pointCount_++;
 
-    // Actualizar rango X (ventana deslizante)
+    // 2. VENTANA DESLIZANTE (últimos 50 puntos)
     if (pointCount_ > 50) {
         axisX_->setRange(pointCount_ - 50, pointCount_);
     } else {
         axisX_->setRange(0, 50);
     }
 
-    // Escalado dinámico inteligente del eje Y
+    // 3. ESCALADO DINÁMICO DEL EJE Y
     qreal maxValue = 0;
     qreal minValue = value;
 

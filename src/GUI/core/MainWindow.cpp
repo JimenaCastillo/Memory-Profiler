@@ -126,16 +126,20 @@ void MainWindow::updateMetrics(const QString& json) {
     QString type = root.value("type").toString();
 
     if (type == "SUMMARY") {
-        metricsView_->setPlainText("📊 Métricas:\n" + json);
+        metricsView_->setPlainText("Métricas:\n" + json);
 
+        // MÉTRICAS EN TIEMPO REAL
         QJsonObject payload = root.value("payload").toObject();
         double mem = payload.value("bytes_in_use").toDouble();
-        chartView_->addDataPoint(mem / 1024.0);
+
+        // Agregar punto a la gráfica
+        chartView_->addDataPoint(mem / 1024.0); // Convertir a KB
 
     } else if (type == "LIVE_ALLOCS") {
-        metricsView_->append("\n📸 Snapshot recibido:\n" + json);
-        statusBar_->showMessage("📸 Snapshot actualizado", 3000);
+        metricsView_->append("\nSnapshot recibido:\n" + json);
+        statusBar_->showMessage("Snapshot actualizado", 3000);
 
+        // SNAPSHOT COMPLETO
         QJsonObject payload = root.value("payload").toObject();
         QJsonArray blocks = payload.value("blocks").toArray();
 

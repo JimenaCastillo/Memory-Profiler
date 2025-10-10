@@ -103,6 +103,7 @@ void ProfilerController::onReadyRead() {
     qDebug() << "[ProfilerController] Buffer acumulado:" << receiveBuffer_.size() << "bytes";
 
     while (!receiveBuffer_.isEmpty()) {
+        // 1. Encontrar inicio de JSON
         int jsonStart = receiveBuffer_.indexOf('{');
         if (jsonStart == -1) {
             receiveBuffer_.clear();
@@ -113,11 +114,13 @@ void ProfilerController::onReadyRead() {
             receiveBuffer_.remove(0, jsonStart);
         }
 
+        // 2. Verificar si tenemos un JSON completo
         if (!isCompleteJson(receiveBuffer_)) {
             qDebug() << "[ProfilerController] JSON incompleto, esperando más datos...";
-            break;
+            break; // Esperar más datos
         }
 
+        //3. Extraer el JSON completo
         int braceCount = 0;
         bool inString = false;
         bool escape = false;
@@ -126,6 +129,7 @@ void ProfilerController::onReadyRead() {
         for (int i = 0; i < receiveBuffer_.length(); ++i) {
             QChar c = receiveBuffer_[i];
 
+            // Manejo de strings
             if (escape) {
                 escape = false;
                 continue;
@@ -151,7 +155,7 @@ void ProfilerController::onReadyRead() {
                 braceCount--;
                 if (braceCount == 0) {
                     jsonEnd = i;
-                    break;
+                    break; // JSON completo encontrado
                 }
             }
         }
@@ -160,6 +164,7 @@ void ProfilerController::onReadyRead() {
             break;
         }
 
+        // 4. Extraer y procesar mensaje
         QString message = receiveBuffer_.left(jsonEnd + 1);
         receiveBuffer_.remove(0, jsonEnd + 1);
 
@@ -169,6 +174,7 @@ void ProfilerController::onReadyRead() {
 
         qDebug() << "[ProfilerController] JSON completo extraído, tamaño:" << message.size() << "bytes";
 
+        // 5. Parsear y emitir señal
         QJsonParseError parseError;
         QJsonDocument doc = QJsonDocument::fromJson(message.toUtf8(), &parseError);
 
