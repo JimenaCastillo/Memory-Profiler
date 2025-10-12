@@ -9,7 +9,7 @@ MemoryChart::MemoryChart(QWidget* parent)
       axisY_(new QValueAxis()),
       pointCount_(0)
 {
-    // Configurar serie con estilo mejorado
+    // Configurar serie con estilo
     QPen pen(QColor(100, 180, 255));  // Azul brillante
     pen.setWidth(3);
     series_->setPen(pen);
@@ -49,9 +49,9 @@ MemoryChart::MemoryChart(QWidget* parent)
     axisY_->setTickCount(6);
     axisY_->setGridLineVisible(true);
 
-    // Tema oscuro con mejor contraste
+    // Tema oscuro con contraste
     chart_->setTheme(QChart::ChartThemeDark);
-    chart_->setTitle("📈 Historial de Uso de Memoria en Tiempo Real");
+    chart_->setTitle("Historial de Uso de Memoria en Tiempo Real");
     chart_->legend()->setAlignment(Qt::AlignBottom);
     chart_->setAnimationOptions(QChart::SeriesAnimations);
 

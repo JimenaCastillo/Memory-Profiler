@@ -115,7 +115,7 @@ void MainWindow::onSnapshotClicked() {
     }
 
     controller_->requestSnapshot();
-    statusBar_->showMessage("📸 Solicitando snapshot...", 3000);
+    statusBar_->showMessage("Solicitando snapshot...", 3000);
 }
 
 void MainWindow::updateMetrics(const QString& json) {

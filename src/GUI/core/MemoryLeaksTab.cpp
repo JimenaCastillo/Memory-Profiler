@@ -27,7 +27,7 @@ MemoryLeaksTab::MemoryLeaksTab(QWidget* parent)
     summaryLabel_->setMinimumHeight(100);
     mainLayout->addWidget(summaryLabel_);
 
-    // ===== TABLA DE LEAKS MEJORADA =====
+    // ===== TABLA DE LEAKS =====
     leakTable_->setColumnCount(5);
     leakTable_->setHorizontalHeaderLabels({"Archivo", "Línea", "Tamaño (KB)", "Tipo", "Timestamp"});
     leakTable_->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -124,7 +124,7 @@ void MemoryLeaksTab::updateFromJson(const QString& json) {
 }
 
 void MemoryLeaksTab::updateFromLeaks(const LeakSummary& summary) {
-    // ===== RESUMEN MEJORADO CON FORMATO =====
+    // ===== RESUMEN CON FORMATO =====
     QString text = QString(
     "\n"
         "RESUMEN DE MEMORY LEAKS\n"
@@ -136,7 +136,7 @@ void MemoryLeaksTab::updateFromLeaks(const LeakSummary& summary) {
         .arg(summary.total_leaked_bytes / 1024.0, 10, 'f', 2)
         .arg(summary.total_leaked_bytes / (1024.0 * 1024.0), 8, 'f', 2)
         .arg(summary.total_leaks, 10)
-        .arg(summary.largest_leak_file.left(30), -30)
+        .arg(summary.largest_leak_file.left(38).toStdString().c_str())
         .arg(summary.largest_leak_size / 1024.0, 10, 'f', 2);
 
     summaryLabel_->setText(text);
@@ -193,7 +193,7 @@ void MemoryLeaksTab::updateFromLeaks(const LeakSummary& summary) {
 
     QChart* barChart = new QChart();
     barChart->addSeries(barSeries);
-    barChart->setTitle("🔝 Top 10 Archivos con más Fugas (KB)");
+    barChart->setTitle("Top 10 Archivos con más Fugas (KB)");
     barChart->setAnimationOptions(QChart::SeriesAnimations);
     barChart->setTheme(QChart::ChartThemeDark);
 
@@ -212,7 +212,7 @@ void MemoryLeaksTab::updateFromLeaks(const LeakSummary& summary) {
 
     barChartView_->setChart(barChart);
 
-    // ===== GRÁFICA DE PIE MEJORADA =====
+    // ===== GRÁFICA DE PIE =====
     QPieSeries* pieSeries = new QPieSeries();
 
     // Agrupar archivos pequeños en "Otros"
@@ -243,46 +243,98 @@ void MemoryLeaksTab::updateFromLeaks(const LeakSummary& summary) {
 
     QChart* pieChart = new QChart();
     pieChart->addSeries(pieSeries);
-    pieChart->setTitle("📊 Distribución de Fugas por Archivo");
+    pieChart->setTitle("Distribución de Fugas por Archivo");
     pieChart->setTheme(QChart::ChartThemeDark);
     pieChart->legend()->setVisible(true);
     pieChart->legend()->setAlignment(Qt::AlignRight);
 
     pieChartView_->setChart(pieChart);
 
-    // ===== GRÁFICA TEMPORAL MEJORADA =====
+    // ===== GRÁFICA TEMPORAL =====
     QScatterSeries* scatterSeries = new QScatterSeries();
     scatterSeries->setName("Detección de leaks");
-    scatterSeries->setMarkerSize(8.0);
+    scatterSeries->setMarkerSize(10.0);
     scatterSeries->setColor(QColor(255, 100, 100));
 
-    // Usar timestamp relativo (en milisegundos desde el primer leak)
-    uint64_t minTime = summary.leaks.empty() ? 0 : summary.leaks[0].timestamp_ns;
+    if (!summary.leaks.empty()) {
+        // Encontrar el rango de timestamps
+        uint64_t minTime = summary.leaks[0].timestamp_ns;
+        uint64_t maxTime = summary.leaks[0].timestamp_ns;
 
-    for (const auto& leak : summary.leaks) {
-        qint64 relativeTime = static_cast<qint64>((leak.timestamp_ns - minTime) / 1e6);  // ms
-        qreal sizeKB = static_cast<qreal>(leak.size) / 1024.0;
-        scatterSeries->append(relativeTime, sizeKB);
+        for (const auto& leak : summary.leaks) {
+            minTime = qMin(minTime, leak.timestamp_ns);
+            maxTime = qMax(maxTime, leak.timestamp_ns);
+        }
+
+        // Calcular duración total en milisegundos
+        double totalDurationMs = (maxTime - minTime) / 1e6;
+
+        // Si la duración es muy corta, usar segundos
+        bool useSeconds = totalDurationMs > 10000; // Más de 10 segundos
+        double timeFactor = useSeconds ? 1e9 : 1e6; // nanosegundos o milisegundos
+
+        // Agregar puntos con tiempo relativo
+        for (const auto& leak : summary.leaks) {
+            double relativeTime = static_cast<double>(leak.timestamp_ns - minTime) / timeFactor;
+            qreal sizeKB = static_cast<qreal>(leak.size) / 1024.0;
+            scatterSeries->append(relativeTime, sizeKB);
+        }
+
+        QChart* timeChart = new QChart();
+        timeChart->addSeries(scatterSeries);
+        timeChart->setTitle("Detección de Fugas en el Tiempo");
+        timeChart->setTheme(QChart::ChartThemeDark);
+
+        // Configurar eje X con el rango correcto
+        QValueAxis* axisXTime = new QValueAxis();
+        QString timeUnit = useSeconds ? "Tiempo (segundos)" : "Tiempo (milisegundos)";
+        axisXTime->setTitleText(timeUnit);
+        axisXTime->setLabelFormat("%.1f");
+
+        // Establecer rango con margen del 5%
+        double maxTimeValue = (maxTime - minTime) / timeFactor;
+        double margin = maxTimeValue * 0.05;
+        axisXTime->setRange(-margin, maxTimeValue + margin);
+
+        timeChart->addAxis(axisXTime, Qt::AlignBottom);
+        scatterSeries->attachAxis(axisXTime);
+
+        // Configurar eje Y con el rango correcto
+        QValueAxis* axisYTime = new QValueAxis();
+        axisYTime->setTitleText("Tamaño del leak (KB)");
+        axisYTime->setLabelFormat("%.2f");
+
+        // Encontrar min/max de tamaños
+        qreal minSize = std::numeric_limits<qreal>::max();
+        qreal maxSize = 0;
+        for (const auto& leak : summary.leaks) {
+            qreal sizeKB = static_cast<qreal>(leak.size) / 1024.0;
+            minSize = qMin(minSize, sizeKB);
+            maxSize = qMax(maxSize, sizeKB);
+        }
+
+        // Establecer rango Y con margen
+        qreal sizeMargin = (maxSize - minSize) * 0.1;
+        if (sizeMargin < 0.1) sizeMargin = 0.1;
+        axisYTime->setRange(qMax(0.0, minSize - sizeMargin), maxSize + sizeMargin);
+
+        timeChart->addAxis(axisYTime, Qt::AlignLeft);
+        scatterSeries->attachAxis(axisYTime);
+
+        timeChart->legend()->setVisible(true);
+        timeChart->legend()->setAlignment(Qt::AlignBottom);
+
+        // Mejorar estilo
+        timeChart->setBackgroundBrush(QBrush(QColor(30, 30, 30)));
+        timeChart->setPlotAreaBackgroundBrush(QBrush(QColor(20, 20, 20)));
+        timeChart->setPlotAreaBackgroundVisible(true);
+
+        timeChartView_->setChart(timeChart);
+    } else {
+        // Si no hay leaks, mostrar gráfica vacía
+        QChart* emptyChart = new QChart();
+        emptyChart->setTitle("Detección de Fugas en el Tiempo (Sin datos)");
+        emptyChart->setTheme(QChart::ChartThemeDark);
+        timeChartView_->setChart(emptyChart);
     }
-
-    QChart* timeChart = new QChart();
-    timeChart->addSeries(scatterSeries);
-    timeChart->setTitle("⏱️ Detección de Fugas en el Tiempo");
-    timeChart->setTheme(QChart::ChartThemeDark);
-
-    QValueAxis* axisXTime = new QValueAxis();
-    axisXTime->setTitleText("Tiempo transcurrido (ms)");
-    axisXTime->setLabelFormat("%d");
-    timeChart->addAxis(axisXTime, Qt::AlignBottom);
-    scatterSeries->attachAxis(axisXTime);
-
-    QValueAxis* axisYTime = new QValueAxis();
-    axisYTime->setTitleText("Tamaño del leak (KB)");
-    timeChart->addAxis(axisYTime, Qt::AlignLeft);
-    scatterSeries->attachAxis(axisYTime);
-
-    timeChart->legend()->setVisible(true);
-    timeChart->legend()->setAlignment(Qt::AlignBottom);
-
-    timeChartView_->setChart(timeChart);
 }

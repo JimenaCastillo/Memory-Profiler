@@ -75,7 +75,7 @@ void MemoryMapView::updateFromJson(const QString& json) {
         QGraphicsRectItem* rect = scene_->addRect(x, y, width, maxHeight);
         rect->setToolTip(tooltip);
 
-        // COLORES MEJORADOS
+        // COLORES
         if (hasValidInfo) {
             // CYAN brillante para bloques con información
             rect->setBrush(QColor(0, 255, 255));  // Cyan puro
